@@ -1,144 +1,132 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { FaCalendarAlt, FaSearch, FaPlus, FaMinus, FaUser } from "react-icons/fa";
+import { FaCalendarAlt, FaPlus, FaMinus, FaUser } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { appartements } from "../Api.js/api"; // ✅ Import de l'API
 
 export default function Home() {
   const [guests, setGuests] = useState(1);
   const [showResults, setShowResults] = useState(false);
-  const [selectedApt, setSelectedApt] = useState(null);
-
-  // Faux appartements pour la démo
-  const appartements = [
-    { id: 1, title: "Appartement Cosy à Metz", price: 80, img: "https://a0.muscache.com/im/pictures/hosting/Hosting-U3RheVN1cHBseUxpc3Rpbmc6MTI1ODU4MzI0MzUxNTQ3NTM5MA%3D%3D/original/703bba30-5fc5-463b-a35f-1e2eb65d4911.jpeg?im_w=1200&im_format=avif" },
-    { id: 2, title: "Studio Moderne", price: 65, img: "https://a0.muscache.com/im/pictures/hosting/Hosting-U3RheVN1cHBseUxpc3Rpbmc6MTI1ODU4MzI0MzUxNTQ3NTM5MA%3D%3D/original/703bba30-5fc5-463b-a35f-1e2eb65d4911.jpeg?im_w=1200&im_format=avif" },
-    { id: 3, title: "Maison Spacieuse", price: 120, img: "https://a0.muscache.com/im/pictures/hosting/Hosting-U3RheVN1cHBseUxpc3Rpbmc6MTI1ODU4MzI0MzUxNTQ3NTM5MA%3D%3D/original/703bba30-5fc5-463b-a35f-1e2eb65d4911.jpeg?im_w=1200&im_format=avif" },
-  ];
 
   return (
-    <div className="bg-gray-100 min-h-screen py-16">
+    <div className="bg-gray-100 min-h-screen sm:px-6 lg:px-8">
+      {/* BANNIÈRE */}
+      <div className="w-screen h-[300px] sm:h-[400px] relative mb-8 -mx-4 sm:-mx-6 lg:-mx-8">
+        <img
+          src="https://www.maisonsclairlogis.fr/wp-content/uploads/2024/04/maison-contemporaine_signature_ar_web.jpg"
+          alt="Bannière de bienvenue"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+          <h1 className="text-white text-4xl font-bold">Bienvenue chez Livence</h1>
+        </div>
+      </div>
 
-      {/* FORMULAIRE AVEC ANIMATION */}
+      {/* FORMULAIRE */}
       <motion.section
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="max-w-5xl mx-auto bg-white rounded-xl shadow-md p-6 flex flex-wrap gap-4 items-center justify-between"
+        className="max-w-5xl mx-auto bg-white rounded-xl shadow-md p-6"
       >
-        {/* Date d'arrivée */}
-        <div className="flex items-center gap-2 flex-1 min-w-[150px]">
-          <FaCalendarAlt className="text-blue-600" />
-          <div>
-            <label className="text-sm text-gray-500">Date d'arrivée</label>
-            <input type="date" className="block w-full mt-1 text-gray-700 focus:outline-none" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Date d'arrivée */}
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Date d'arrivée
+            </label>
+            <div className="relative">
+              <input
+                type="date"
+                className="w-full p-2 border rounded-lg pl-10"
+              />
+              <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            </div>
           </div>
-        </div>
 
-        {/* Date de départ */}
-        <div className="flex items-center gap-2 flex-1 min-w-[150px]">
-          <FaCalendarAlt className="text-blue-600" />
-          <div>
-            <label className="text-sm text-gray-500">Date de départ</label>
-            <input type="date" className="block w-full mt-1 text-gray-700 focus:outline-none" />
+          {/* Date de départ */}
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Date de départ
+            </label>
+            <div className="relative">
+              <input
+                type="date"
+                className="w-full p-2 border rounded-lg pl-10"
+              />
+              <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            </div>
           </div>
-        </div>
 
-        {/* Invités */}
-        <div className="flex items-center gap-2 flex-1 min-w-[150px]">
-          <FaUser className="text-blue-600" />
+          {/* Nombre de voyageurs */}
           <div>
-            <label className="text-sm text-gray-500">Invités</label>
-            <div className="flex items-center gap-2 mt-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Voyageurs
+            </label>
+            <div className="flex items-center border rounded-lg p-2">
+              <FaUser className="text-gray-400 mr-2" />
               <button
                 onClick={() => setGuests(Math.max(1, guests - 1))}
-                className="p-1 bg-gray-200 rounded-full"
+                className="p-1"
               >
-                <FaMinus />
+                <FaMinus className="text-gray-600" />
               </button>
-              <span>{guests}</span>
+              <span className="mx-3">{guests}</span>
               <button
                 onClick={() => setGuests(guests + 1)}
-                className="p-1 bg-gray-200 rounded-full"
+                className="p-1"
               >
-                <FaPlus />
+                <FaPlus className="text-gray-600" />
               </button>
             </div>
           </div>
-        </div>
 
-        {/* BOUTON RECHERCHE */}
-        <button
-          onClick={() => setShowResults(true)}
-          className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
-        >
-          Rechercher
-        </button>
+          {/* BOUTON RECHERCHE */}
+          <button
+            onClick={() => setShowResults(true)}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition flex items-center justify-center"
+          >
+            Rechercher
+          </button>
+        </div>
       </motion.section>
 
-      {/* AFFICHAGE DES APPARTEMENTS APRÈS RECHERCHE */}
-      {showResults && (
+      {/* APPARTEMENTS */}
+    
         <motion.section
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="mt-12 max-w-5xl mx-auto grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+          className="mt-12 max-w-5xl mx-auto grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
         >
           {appartements.map((apt) => (
-            <div key={apt.id} className="bg-white shadow-lg rounded-lg overflow-hidden">
-              <img src={apt.img} alt={apt.title} className="w-full h-48 object-cover" />
-              <div className="p-4">
-                <h3 className="text-lg font-semibold">{apt.title}</h3>
-                <p className="text-gray-600">{apt.price}€ / nuit</p>
+            <div
+              key={apt.id}
+              className="bg-white border rounded-lg shadow-md"
+            >
+              <Link to={`/appartement/${apt.id}`}>
+                <img
+                  className="rounded-t-lg w-full h-48 object-cover"
+                  src={apt.images[0]}
+                  alt={apt.titre}
+                />
+              </Link>
+              <div className="p-5">
+                <Link to={`/appartement/${apt.id}`}>
+                  <h5 className="text-2xl font-bold">{apt.titre}</h5>
+                </Link>
+                <p className="text-gray-700">{apt.prixParNuit}€ / nuit</p>
                 <Link
-  to={`/appartement/${apt.id}`}
-  className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition text-center block"
->
-  Voir plus
-</Link>
-
+                  to={`/appartement/${apt.id}`}
+                  className="mt-3 inline-block bg-blue-600 text-white py-2 px-4 rounded-lg"
+                >
+                  Voir plus
+                </Link>
               </div>
             </div>
           ))}
         </motion.section>
-      )}
-
-      {/* MODAL POUR AFFICHER LES DÉTAILS */}
-      {selectedApt && (
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="fixed inset-0 bg-black/50 flex justify-center items-center z-50"
-        >
-          <div className="bg-white rounded-xl max-w-4xl w-full p-6 relative">
-            
-            {/* Bouton pour fermer */}
-            <button
-              onClick={() => setSelectedApt(null)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
-            >
-              ✖
-            </button>
-
-            {/* Contenu des détails */}
-            <h2 className="text-2xl font-bold mb-4">{selectedApt.title}</h2>
-            <img
-              src={selectedApt.img}
-              alt={selectedApt.title}
-              className="w-full h-64 object-cover rounded-lg mb-4"
-            />
-            <p className="text-gray-700 mb-2">Prix : {selectedApt.price} € / nuit</p>
-            <p className="text-gray-600">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin vel
-              luctus nisi. Sed quis augue ut nisi sodales fermentum.
-            </p>
-
-            <button className="mt-6 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
-              Réserver cet appartement
-            </button>
-          </div>
-        </motion.div>
-      )}
+      
     </div>
   );
 }

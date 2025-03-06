@@ -50,11 +50,12 @@ export default function Reservation() {
 
           {/* Résumé */}
           <div className="w-full lg:w-80 bg-white p-6 rounded-lg shadow">
-            <img
-              src={appartement.image}
-              alt={appartement.titre}
-              className="w-full h-40 object-cover rounded-lg mb-4"
-            />
+          <img
+  src={appartement.images[0]}
+  alt={appartement.titre}
+  className="w-full h-40 object-cover rounded-lg mb-4"
+/>
+
             <h3 className="font-semibold text-lg">{appartement.titre}</h3>
             <p className="text-sm text-gray-600">
               {appartement.statut} • ⭐ {appartement.note} ({appartement.nombreAvis} avis)

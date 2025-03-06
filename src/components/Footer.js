@@ -5,9 +5,7 @@ export default function Footer() {
           <p className="text-sm">
             © {new Date().getFullYear()} BookingApp. Tous droits réservés.
           </p>
-          <p className="text-xs mt-2">
-            Conçu avec ❤️ par ton dev bg.
-          </p>
+      
         </div>
       </footer>
     );
