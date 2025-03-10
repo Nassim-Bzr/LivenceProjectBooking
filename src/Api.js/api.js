@@ -1,6 +1,7 @@
 export const appartements = [
     {
       id: 1,
+      smoobuId: 1134658,  // id Smoobu
       titre: "Studio Zen - Wi-Fi - Parking",
       localisation: "Amnéville, France",
       description: "À deux pas des thermes, ce studio tout équipé vous offre confort et tranquillité. Situé à l'arrière d'une maison, il dispose d'une petite cour privative et d'un parking gratuit. Vous bénéficierez d'un espace moderne avec Wi-Fi, télévision connectée et tout le nécessaire pour un séjour agréable. Idéal pour une escapade détente ou un déplacement professionnel, à proximité du zoo, du casino et des activités d'Amnéville.",
@@ -53,6 +54,8 @@ export const appartements = [
    
     {
       id: 3,
+      smoobuId: 1134658,  // id Smoobu
+
       titre: "Luxe & Confort | 4 Ch. | Metz",
       localisation: "Metz, France",
       description: "✨ Luxe & Confort à Metz – Appartement Premium 100m²  ✨\n\n🏡 Spacieux et moderne, idéal pour familles ou équipes de travailleurs.\n🛏️ 4 chambres + canapé-lit (10 couchages)\n🚗 Parking gratuit pour plus de confort\n🎬 TV connectée avec Netflix pour vos soirées détente\n🍽️ Cuisine équipée : four, micro-ondes, lave-vaisselle, cafetière\n🧺 Machine à laver à disposition\n☀️ Lumineux et idéalement situé\n🛎️ Linge de lit et serviettes fournis",

@@ -1,6 +1,19 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { appartements } from "../Api.js/api";
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import AppartementCalendar from '../components/AppartementCalendar';
+import SmoobuReservation from "../components/SmoobuReservation";
+
+// Fix for default marker icon
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+});
 
 export default function AppartementDetails() {
   const navigate = useNavigate();
@@ -12,6 +25,9 @@ export default function AppartementDetails() {
   const [dateArrivee, setDateArrivee] = useState("");
   const [dateDepart, setDateDepart] = useState("");
   const [voyageurs, setVoyageurs] = useState(2);
+
+  // Coordonnées factices pour la démo - à remplacer par les vraies coordonnées
+  const position = [49.1193089, 6.1757156]; // Coordonnées pour Metz
 
   console.log(appartement)
   if (!appartement) return <div className="text-center py-20">Appartement non trouvé.</div>;
@@ -27,6 +43,24 @@ export default function AppartementDetails() {
     navigate("/reservation", {
       state: { appartement, voyageurs, dates: { arrivee: dateArrivee, depart: dateDepart } },
     });
+  };
+
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: appartement.titre,
+          text: `Découvrez ${appartement.titre} sur Livence`,
+          url: window.location.href
+        });
+      } else {
+        // Fallback - copier le lien dans le presse-papier
+        await navigator.clipboard.writeText(window.location.href);
+        alert("Lien copié dans le presse-papier !");
+      }
+    } catch (error) {
+      console.error("Erreur lors du partage:", error);
+    }
   };
 
   const getEquipementIcon = (item) => {
@@ -61,7 +95,10 @@ export default function AppartementDetails() {
           <span className="underline">{appartement.localisation}</span>
         </div>
         <div className="flex gap-4">
-          <button className="flex items-center gap-2 hover:bg-gray-100 px-4 py-2 rounded-lg">
+          <button 
+            onClick={handleShare}
+            className="flex items-center gap-2 hover:bg-gray-100 px-4 py-2 rounded-lg"
+          >
             <svg viewBox="0 0 32 32" className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="presentation" focusable="false"><path d="M25 16.67l-9.5 9.47v-7.13a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v7.13L2 16.67V30h23v-3.33zM27.5 0h-23A2.5 2.5 0 0 0 2 2.5v11.67l9.5 9.47V14.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5v9.14l9.5-9.47V2.5A2.5 2.5 0 0 0 27.5 0z"></path></svg>
             Partager
           </button>
@@ -112,6 +149,7 @@ export default function AppartementDetails() {
           />
         </div>
       )}
+
 
       {/* Disposition principale */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -207,85 +245,33 @@ export default function AppartementDetails() {
 
         {/* Carte réservation à droite */}
         <div className="relative">
-          <div className="sticky top-24">
-            <div className="border rounded-xl p-6 shadow-lg bg-white">
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <span className="text-xl font-semibold">{appartement.prixParNuit}€</span>
-                  <span className="text-gray-500"> / nuit</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span>⭐ {appartement.note}</span>
-                  <span>•</span>
-                  <span className="underline">{appartement.nombreAvis} avis</span>
-                </div>
-              </div>
+  <div className="sticky top-24 border rounded-xl p-6 shadow-lg bg-white">
+    <SmoobuReservation appartementId={appartement.smoobuId} />
+  </div>
+  </div>
+        <div className="my-8">
+  <h2 className="text-2xl font-semibold mb-4">Où se situe l'appartement où vous allez séjourner ?</h2>
+  <div className="max-w-[1280px] mx-auto">
+    <MapContainer 
+      center={position} 
+      zoom={13} 
+      scrollWheelZoom={true} 
+      className="w-full h-[550px] rounded-xl shadow-lg z-[0]"
+    >
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution="&copy; OpenStreetMap contributors"
+      />
+      <Marker position={position}>
+        <Popup>
+          {appartement.titre}
+        </Popup>
+      </Marker>
+    </MapContainer>
+  </div>
+      
 
-              <div className="border rounded-t-lg">
-                <div className="grid grid-cols-2 border-b">
-                  <div className="p-3 border-r">
-                    <div className="text-xs font-bold">ARRIVÉE</div>
-                    <input
-                      type="date"
-                      value={dateArrivee}
-                      onChange={(e) => setDateArrivee(e.target.value)}
-                      className="w-full outline-none text-sm"
-                      placeholder="Ajouter une date"
-                    />
-                  </div>
-                  <div className="p-3">
-                    <div className="text-xs font-bold">DÉPART</div>
-                    <input
-                      type="date"
-                      value={dateDepart}
-                      onChange={(e) => setDateDepart(e.target.value)}
-                      className="w-full outline-none text-sm"
-                      placeholder="Ajouter une date"
-                    />
-                  </div>
-                </div>
-                <div className="p-3">
-                  <div className="text-xs font-bold">VOYAGEURS</div>
-                  <input
-                    type="number"
-                    min="1"
-                    max={appartement.capacite.voyageurs}
-                    value={voyageurs}
-                    onChange={(e) => setVoyageurs(parseInt(e.target.value))}
-                    className="w-full outline-none text-sm"
-                    placeholder="Ajouter des voyageurs"
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={handleReservation}
-                className="mt-4 w-full bg-[#1D78E4] text-white py-3 rounded-lg font-semibold hover:bg-[#E50E41] transition"
-              >
-                Réserver
-              </button>
-
-              <div className="mt-4 space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="underline">{appartement.prixParNuit}€ x 5 nuits</span>
-                  <span>{appartement.prixParNuit * 5}€</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="underline">Frais de ménage</span>
-                  <span>{appartement.fraisMenage}€</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="underline">Frais de service</span>
-                  <span>{appartement.fraisService}€</span>
-                </div>
-                <div className="border-t pt-3 flex justify-between font-semibold">
-                  <span>Total</span>
-                  <span>{totalPrix}€</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+</div>
 
       </div>
     </div>

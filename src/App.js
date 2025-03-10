@@ -8,6 +8,9 @@ import Proprietaires from './Pages/Proprietaires';
 import Navbar from './components/Navbar';
 import AppartementDetails from "./Pages/AppartementDetails";
 
+
+import AppartementList from './components/AppartmentList';
+
 import Footer from './components/Footer';
 
 function App() {
@@ -18,6 +21,7 @@ function App() {
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
+            
             <Route path="/reservation" element={<Reservation />} />
              <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -26,6 +30,8 @@ function App() {
             <Route path="/appartement/:id" element={<AppartementDetails />} />
           </Routes>
         </main>
+        <AppartementList />
+
         <Footer />
       </div>
     </Router>
