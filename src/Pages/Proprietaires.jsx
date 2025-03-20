@@ -1,115 +1,132 @@
+import React from "react";
+
+
+
 export default function Proprietaires() {
   return (
-    <div className="bg-white text-gray-900 min-h-screen ">
+    <div className="bg-white text-gray-900 min-h-screen">
       <section
-  className="relative bg-cover bg-center bg-no-repeat py-32"
-  style={{ backgroundImage: `url("https://prod-saint-gobain-fr.content.saint-gobain.io/sites/saint-gobain.fr/files/2022-04/maison-contemporaine-la-maison-saint-gobain01.jpg")` }}
->
-  <div className="bg-black/50 absolute inset-0"></div>
-  <div className="relative text-center text-white max-w-3xl mx-auto px-4">
-    <h1 className="text-4xl font-extrabold mb-4">
-      Maximisez vos revenus locatifs à Metz
-    </h1>
-    <p className="text-lg mb-6">
-      Confiez votre bien à Livence et profitez d'une gestion sans souci avec des revenus garantis et payés en avance.
-    </p>
-    <button className="bg-blue-600 px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition">
-      Estimez mes revenus
-    </button>
-  </div>
-</section>
-
-      {/* TITRE PRINCIPAL */}
-      
-      <div className="max-w-5xl mx-auto space-y-16">
-
-        {/* INTRO */}
-        
-
-        {/* POURQUOI LIVENCE */}
-        <section>
-          <h2 className="text-3xl font-bold text-center mt-12 mb-12">
-            ⭐ Pourquoi choisir Livence ?
-          </h2>
-          <p className="text-center mb-10">
-            Leader de la gestion locative à Metz depuis notre création, nous visons <strong>500 propriétaires satisfaits</strong> d'ici 2025.
+        className="relative bg-cover bg-center bg-no-repeat py-40"
+        style={{ backgroundImage: `url("https://a0.muscache.com/im/pictures/miso/Hosting-53370166/original/3d524a8c-8f16-4642-9c71-7c4761c2fd47.jpeg")` }}
+      >
+        <div className="bg-black/40 absolute inset-0"></div>
+        <div className="relative text-center text-white max-w-3xl mx-auto px-4">
+          <h1 className="text-5xl font-extrabold mb-6">
+            Gagnez plus avec votre bien à Metz
+          </h1>
+          <p className="text-xl mb-8">
+            Rejoignez les propriétaires qui font confiance à Livence et augmentez vos revenus locatifs jusqu'à 30% tout en bénéficiant d'une gestion sans stress.
           </p>
+          <button className="bg-rose-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-rose-700 transition-colors shadow-lg">
+            Estimer mes revenus potentiels
+          </button>
+        </div>
+      </section>
 
+      <div className="max-w-6xl mx-auto px-4 space-y-20 py-16">
+        <section>
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Pourquoi les propriétaires choisissent Livence
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
+              <div className="text-3xl mb-4">💰</div>
+              <h3 className="text-xl font-semibold mb-3">Revenus optimisés</h3>
+              <p className="text-gray-600">Augmentez vos revenus locatifs jusqu'à 30% par rapport à une location classique avec des paiements garantis en avance.</p>
+            </div>
+
+            <div className="p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
+              <div className="text-3xl mb-4">🛡️</div>
+              <h3 className="text-xl font-semibold mb-3">Zéro souci</h3>
+              <p className="text-gray-600">Nous gérons tout : de la mise en location à l'entretien, en passant par la gestion des locataires et les démarches administratives.</p>
+            </div>
+
+            <div className="p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
+              <div className="text-3xl mb-4">⭐</div>
+              <h3 className="text-xl font-semibold mb-3">Flexibilité totale</h3>
+              <p className="text-gray-600">Gardez le contrôle avec un accès à votre calendrier et la possibilité d'utiliser votre bien quand vous le souhaitez.</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-gray-50 rounded-2xl p-12">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Comment ça marche ?
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="text-2xl mb-4">📱</div>
+              <h3 className="font-semibold mb-2">1. Estimation gratuite</h3>
+              <p className="text-gray-600">Découvrez votre potentiel de revenus en quelques clics</p>
+            </div>
+
+            <div className="text-center">
+              <div className="text-2xl mb-4">🤝</div>
+              <h3 className="font-semibold mb-2">2. Rencontre</h3>
+              <p className="text-gray-600">Visite de votre bien et présentation détaillée de nos services</p>
+            </div>
+
+            <div className="text-center">
+              <div className="text-2xl mb-4">📸</div>
+              <h3 className="font-semibold mb-2">3. Mise en valeur</h3>
+              <p className="text-gray-600">Photos professionnelles et optimisation de votre annonce</p>
+            </div>
+
+            <div className="text-center">
+              <div className="text-2xl mb-4">✨</div>
+              <h3 className="font-semibold mb-2">4. Location active</h3>
+              <p className="text-gray-600">Début des revenus garantis et gestion complète</p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Ils nous font confiance
+          </h2>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="p-6 bg-gray-50 rounded-lg shadow">
-              <h3 className="text-xl font-semibold mb-4">💰 Sécurité Financière Renforcée</h3>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                <li>Paiement des loyers par trimestre</li>
-                <li>Revenus locatifs garantis et réguliers</li>
-                <li>Aucun risque d'impayé</li>
-                <li>Gestion simplifiée</li>
-                <li>Cautionnement professionnel sécurisé</li>
-                <li>Résiliation facilitée avec préavis réduit</li>
-                <li>Protection contre les expulsions</li>
-              </ul>
+            <div className="bg-white p-6 rounded-xl border border-gray-200">
+              <div className="flex items-center mb-4">
+                <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Sophie" className="w-12 h-12 rounded-full mr-4" />
+                <div>
+                  <h4 className="font-semibold">Sophie Martin</h4>
+                  <p className="text-gray-500">Propriétaire depuis 2022</p>
+                </div>
+              </div>
+              <p className="text-gray-600 italic">
+                "Mes revenus locatifs ont augmenté de 25% depuis que je fais confiance à Livence. Leur équipe est réactive et professionnelle."
+              </p>
             </div>
-            <div className="p-6 bg-gray-50 rounded-lg shadow">
-              <h3 className="text-xl font-semibold mb-4">📜 Avantages Fiscaux Préservés</h3>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                <li>Statut de bail habitation maintenu</li>
-                <li>Mêmes avantages fiscaux qu'un bail classique</li>
-                <li>Accompagnement administratif complet</li>
-              </ul>
+
+            <div className="bg-white p-6 rounded-xl border border-gray-200">
+              <div className="flex items-center mb-4">
+                <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Laurent" className="w-12 h-12 rounded-full mr-4" />
+                <div>
+                  <h4 className="font-semibold">Laurent Dubois</h4>
+                  <p className="text-gray-500">Propriétaire depuis 2021</p>
+                </div>
+              </div>
+              <p className="text-gray-600 italic">
+                "La tranquillité d'esprit que m'apporte Livence n'a pas de prix. Plus de tracas avec les locataires et des revenus garantis."
+              </p>
             </div>
           </div>
         </section>
 
-        {/* BIENS EN VEDETTE */}
-        <section>
-          <h2 className="text-3xl font-bold text-center mb-8">
-            🏡 Biens en vedette
+        <section className="text-center">
+          <h2 className="text-3xl font-bold mb-6">
+            Prêt à optimiser vos revenus locatifs ?
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-4 rounded-lg shadow">
-              <h3 className="font-semibold">Appartement moderne</h3>
-              <p>Centre-ville de Metz • 65 m²</p>
-              <p className="font-bold mt-2">850 €/mois</p>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <h3 className="font-semibold">Studio rénové</h3>
-              <p>Quartier Gare • 30 m²</p>
-              <p className="font-bold mt-2">550 €/mois</p>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <h3 className="font-semibold">Maison familiale</h3>
-              <p>Montigny-lès-Metz • 120 m²</p>
-              <p className="font-bold mt-2">1200 €/mois</p>
-            </div>
-          </div>
+          <p className="text-xl text-gray-600 mb-8">
+            Rejoignez les propriétaires satisfaits qui nous font confiance à Metz
+          </p>
+          <button className="bg-rose-600 px-8 py-4 rounded-lg text-lg font-semibold text-white hover:bg-rose-700 transition-colors shadow-lg">
+            Commencer l'estimation gratuite
+          </button>
         </section>
-
-        {/* AVIS CLIENTS */}
-        <section>
-          <h2 className="text-3xl font-bold text-center mb-8">
-            🗣️ Ce que disent nos propriétaires
-          </h2>
-          <div className="space-y-6">
-            <blockquote className="bg-gray-50 p-4 rounded-lg shadow">
-              <p className="italic">
-                “Propriétaire inquiète au départ, j'ai été agréablement surprise par le professionnalisme de Livence.”
-              </p>
-              <footer className="mt-2 font-semibold">– Sophie Martin</footer>
-            </blockquote>
-            <blockquote className="bg-gray-50 p-4 rounded-lg shadow">
-              <p className="italic">
-                “Plus d'impayés, plus de dégradations, et un accompagnement personnalisé qui fait toute la différence.”
-              </p>
-              <footer className="mt-2 font-semibold">– Laurent Dubois</footer>
-            </blockquote>
-            <blockquote className="bg-gray-50 p-4 rounded-lg shadow">
-              <p className="italic">
-                “Livence a dépassé mes attentes : revenus garantis et paiements ponctuels.”
-              </p>
-              <footer className="mt-2 font-semibold">– Marie-Claire Petit</footer>
-            </blockquote>
-          </div>
-        </section>
-
       </div>
     </div>
   );

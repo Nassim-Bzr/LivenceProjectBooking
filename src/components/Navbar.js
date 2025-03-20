@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { useAuth } from '../Context/AuthContext';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user } = useAuth();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -48,10 +50,19 @@ export default function Navbar() {
               <Link to="/proprietaires"
                 className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px]'>Propriétaires</Link>
             </li>
-            <li className='max-lg:border-b max-lg:py-3 px-3'>
-              <Link to="/login"
-                className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px]'>Connexion</Link>
-            </li>
+            {user ? (
+              <>
+                <li className='max-lg:border-b max-lg:py-3 px-3'>
+                  <Link to="/profile"
+                    className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px]'>Mon Profil</Link>
+                </li>
+              </>
+            ) : (
+              <li className='max-lg:border-b max-lg:py-3 px-3'>
+                <Link to="/login"
+                  className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px]'>Connexion</Link>
+              </li>
+            )}
           </ul>
         </div>
 
@@ -67,6 +78,24 @@ export default function Navbar() {
               </path>
             </svg>
           </div>
+          
+          {user && (
+            <div className="hidden lg:block">
+              <Link to="/profile" className="flex items-center">
+                <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 mr-2 border border-gray-300">
+                  <img 
+                    src={user.avatar || ""} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.src = "";
+                    }}
+                  />
+                </div>
+              </Link>
+            </div>
+          )}
+          
           <button onClick={toggleMenu} className='lg:hidden'>
             <svg className="w-7 h-7" fill="#000" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
               <path fillRule="evenodd"
