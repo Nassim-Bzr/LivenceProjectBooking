@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 
 const AuthContext = createContext(null);
@@ -37,8 +37,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await axios.get("http://localhost:5000/users/logout", { withCredentials: true });
-    setUser(null);
+    try {
+      // Utiliser l'ancien point d'accès mais conserver la méthode POST
+      await axios.post("http://localhost:5000/users/logout", {}, { withCredentials: true });
+      setUser(null);
+      // Après déconnexion, rediriger vers la page d'accueil
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+      // Même en cas d'erreur avec le backend, on déconnecte l'utilisateur localement
+      setUser(null);
+      window.location.href = "/";
+    }
   };
 
   return (

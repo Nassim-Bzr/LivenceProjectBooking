@@ -1,13 +1,45 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../Context/AuthContext';
+import MessagePreview from './MessagePreview';
+import { FaChevronDown, FaSignOutAlt } from 'react-icons/fa';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const menuRef = useRef(null);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  // Fermer le menu quand on clique en dehors
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isMenuOpen && menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    // Ajouter l'écouteur d'événement quand le menu est ouvert
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    // Nettoyer l'écouteur quand le menu est fermé ou le composant démonté
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setIsMenuOpen(false);
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+    }
   };
 
   return (
@@ -36,6 +68,7 @@ export default function Navbar() {
           </button>
 
           <ul
+            ref={menuRef}
             className='lg:flex lg:ml-14 lg:gap-x-5 max-lg:space-y-3 max-lg:fixed max-lg:bg-white max-lg:w-1/2 max-lg:min-w-[300px] max-lg:top-0 max-lg:left-0 max-lg:p-6 max-lg:h-full max-lg:shadow-md max-lg:overflow-auto z-50'>
             <li className='mb-6 hidden max-lg:block'>
               <Link to="/">
@@ -56,6 +89,52 @@ export default function Navbar() {
                   <Link to="/profile"
                     className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px]'>Mon Profil</Link>
                 </li>
+                <li className='max-lg:border-b max-lg:py-3 px-3'>
+                  <Link to="/messages"
+                    className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px]'>Messagerie</Link>
+                </li>
+                {user?.role === 'admin' && (
+                  <li className='max-lg:border-b max-lg:py-3 px-3'>
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowAdminMenu(!showAdminMenu)}
+                        className="flex items-center gap-1 text-rose-600 font-medium"
+                      >
+                        Administration
+                        <FaChevronDown className={`transition-transform ${showAdminMenu ? 'rotate-180' : ''}`} />
+                      </button>
+                      
+                      {showAdminMenu && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                          <Link
+                            to="/admin/add-appartement"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            onClick={() => setShowAdminMenu(false)}
+                          >
+                            Ajouter un appartement
+                          </Link>
+                          <Link
+                            to="/admin/reservations"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            onClick={() => setShowAdminMenu(false)}
+                          >
+                            Gérer les réservations
+                          </Link>
+                          {/* Ajoutez d'autres liens admin ici */}
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                )}
+                {/* Bouton déconnexion pour mobile */}
+                <li className='max-lg:border-b max-lg:py-3 px-3 lg:hidden'>
+                  <button
+                    onClick={handleLogout}
+                    className='font-medium text-red-600 block text-[15px] flex items-center'
+                  >
+                    <FaSignOutAlt className="mr-2" /> Déconnexion
+                  </button>
+                </li>
               </>
             ) : (
               <li className='max-lg:border-b max-lg:py-3 px-3'>
@@ -67,20 +146,12 @@ export default function Navbar() {
         </div>
 
         <div className='flex gap-4 ml-auto'>
-          <div
-            className='flex max-w-xs w-full bg-gray-100 px-4 py-2.5 outline outline-transparent border focus-within:border-slate-900 focus-within:bg-transparent transition-all'>
-            <input type='text' placeholder='Search something...'
-              className='w-full text-sm bg-transparent outline-none pr-2' />
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192.904 192.904" width="16px"
-              className="cursor-pointer fill-gray-400">
-              <path
-                d="m190.707 180.101-47.078-47.077c11.702-14.072 18.752-32.142 18.752-51.831C162.381 36.423 125.959 0 81.191 0 36.422 0 0 36.423 0 81.193c0 44.767 36.422 81.187 81.191 81.187 19.688 0 37.759-7.049 51.831-18.751l47.079 47.078a7.474 7.474 0 0 0 5.303 2.197 7.498 7.498 0 0 0 5.303-12.803zM15 81.193C15 44.694 44.693 15 81.191 15c36.497 0 66.189 29.694 66.189 66.193 0 36.496-29.692 66.187-66.189 66.187C44.693 147.38 15 117.689 15 81.193z">
-              </path>
-            </svg>
-          </div>
+          
           
           {user && (
-            <div className="hidden lg:block">
+            <div className="hidden lg:flex items-center space-x-4">
+              <MessagePreview />
+              
               <Link to="/profile" className="flex items-center">
                 <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 mr-2 border border-gray-300">
                   <img 
@@ -93,6 +164,15 @@ export default function Navbar() {
                   />
                 </div>
               </Link>
+              
+              {/* Bouton déconnexion pour desktop */}
+              <button
+                onClick={handleLogout}
+                className="text-red-600 hover:text-red-800"
+                title="Déconnexion"
+              >
+                <FaSignOutAlt size={20} />
+              </button>
             </div>
           )}
           

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../Context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import { FaUser, FaUpload, FaCreditCard, FaHistory, FaEnvelope } from "react-icons/fa";
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -12,6 +13,11 @@ const Profile = () => {
     email: "",
     phone: "",
     bio: "",
+    avatar: "",
+    billingAddress: "",
+    city: "",
+    postalCode: "",
+    country: ""
   });
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,12 +29,16 @@ const Profile = () => {
         email: user.email || "",
         phone: user.phone || "",
         bio: user.bio || "",
+        avatar: user.avatar || "",
+        billingAddress: user.billingAddress || "",
+        city: user.city || "",
+        postalCode: user.postalCode || "",
+        country: user.country || ""
       });
   
       const fetchReservations = async () => {
         try {
           const response = await axios.get("http://localhost:5000/reservations/user", { withCredentials: true });
-          console.log("🔍 Réservations récupérées :", response.data); // 🔥 Debug
           setReservations(response.data);
         } catch (error) {
           console.error("❌ Erreur récupération réservations:", error);
@@ -42,11 +52,29 @@ const Profile = () => {
       navigate("/login");
     }
   }, [user, navigate]);
-  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append("avatar", file);
+      try {
+        const response = await axios.post("http://localhost:5000/users/upload-avatar", formData, {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        setFormData(prev => ({...prev, avatar: response.data.avatarUrl}));
+      } catch (error) {
+        console.error("Error uploading image:", error);
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -56,7 +84,6 @@ const Profile = () => {
         withCredentials: true,
       });
       setIsEditing(false);
-      // Refresh the page or update user context
       window.location.reload();
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -71,102 +98,156 @@ const Profile = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
-      <h1 className="text-3xl font-bold mb-8">Mon profil</h1>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <h1 className="text-4xl font-bold mb-8 text-gray-800">Mon profil</h1>
       
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="bg-white rounded-xl shadow-xl overflow-hidden">
         <div className="md:flex">
           {/* Left sidebar with profile picture and menu */}
-          <div className="md:w-1/3 bg-gray-50 p-6 border-r">
-            <div className="text-center mb-6">
-              <div className="w-32 h-32 mx-auto mb-4 overflow-hidden rounded-full bg-gray-200">
-                <img 
-                  src={user?.avatar || ""} 
-                  alt="Profile" 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = "";
-                  }}
-                />
+          <div className="md:w-1/3 bg-gradient-to-b from-blue-50 to-gray-50 p-8 border-r">
+            <div className="text-center mb-8">
+              <div className="relative w-40 h-40 mx-auto mb-6">
+                <div className="w-full h-full rounded-full overflow-hidden ring-4 ring-blue-100">
+                  <img 
+                    src={formData.avatar || "https://via.placeholder.com/150"} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <label className="absolute bottom-2 right-2 bg-blue-600 p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors">
+                  <FaUpload className="text-white" />
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                  />
+                </label>
               </div>
-              <h2 className="text-xl font-semibold">{user?.name}</h2>
-              <p className="text-gray-500">{user?.email}</p>
+              <h2 className="text-2xl font-bold text-gray-800">{user?.name}</h2>
+              <p className="text-gray-600">{user?.email}</p>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-3">
               <button 
-                className="w-full text-left px-4 py-2 rounded-md hover:bg-gray-200 font-medium"
+                className="w-full flex items-center px-4 py-3 rounded-lg hover:bg-white hover:shadow-md transition-all font-medium text-gray-700"
                 onClick={() => setIsEditing(!isEditing)}
               >
+                <FaUser className="mr-3" />
                 {isEditing ? "Annuler les modifications" : "Modifier le profil"}
               </button>
               <button 
-                className="w-full text-left px-4 py-2 rounded-md hover:bg-gray-200 font-medium"
+                className="w-full flex items-center px-4 py-3 rounded-lg hover:bg-white hover:shadow-md transition-all font-medium text-gray-700"
                 onClick={handleLogout}
               >
+                <FaHistory className="mr-3" />
                 Déconnexion
               </button>
             </div>
           </div>
           
           {/* Main content area */}
-          <div className="md:w-2/3 p-6">
+          <div className="md:w-2/3 p-8">
             {isEditing ? (
               <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4">Modifier mes informations</h3>
-                <form onSubmit={handleSubmit}>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2" htmlFor="name">
-                      Nom complet
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                <h3 className="text-2xl font-bold mb-6 text-gray-800">Modifier mes informations</h3>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-gray-700 mb-2 font-medium" htmlFor="name">
+                        Nom complet
+                      </label>
+                      <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-gray-700 mb-2 font-medium" htmlFor="email">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border rounded-lg bg-gray-50"
+                        disabled
+                      />
+                      <p className="text-sm text-gray-500 mt-1">L'email ne peut pas être modifié</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 mb-2 font-medium" htmlFor="phone">
+                        Téléphone
+                      </label>
+                      <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 mb-2 font-medium" htmlFor="billingAddress">
+                        Adresse de facturation
+                      </label>
+                      <input
+                        type="text"
+                        id="billingAddress"
+                        name="billingAddress"
+                        value={formData.billingAddress}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 mb-2 font-medium" htmlFor="city">
+                        Ville
+                      </label>
+                      <input
+                        type="text"
+                        id="city"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 mb-2 font-medium" htmlFor="postalCode">
+                        Code postal
+                      </label>
+                      <input
+                        type="text"
+                        id="postalCode"
+                        name="postalCode"
+                        value={formData.postalCode}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
                   </div>
                   
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2" htmlFor="email">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled
-                    />
-                    <p className="text-sm text-gray-500 mt-1">L'email ne peut pas être modifié</p>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2" htmlFor="phone">
-                      Téléphone
-                    </label>
-                    <input
-                      type="tel"
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2" htmlFor="bio">
+                  <div>
+                    <label className="block text-gray-700 mb-2 font-medium" htmlFor="bio">
                       À propos de moi
                     </label>
                     <textarea
@@ -175,65 +256,119 @@ const Profile = () => {
                       value={formData.bio}
                       onChange={handleChange}
                       rows="4"
-                      className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     ></textarea>
                   </div>
                   
                   <button
                     type="submit"
-                    className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium transition-colors"
                   >
-                    Enregistrer
+                    Enregistrer les modifications
+                  </button>
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="ml-4 bg-gray-200 text-gray-700 px-8 py-3 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 font-medium transition-colors"
+                  >
+                    Annuler
                   </button>
                 </form>
               </div>
             ) : (
               <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4">Mes informations</h3>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-gray-500">Nom complet</h4>
-                    <p>{user?.name || "Non défini"}</p>
+                <h3 className="text-2xl font-bold mb-6 text-gray-800">Mes informations</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="text-gray-500 text-sm">Nom complet</h4>
+                    <p className="font-medium">{user?.name || "Non défini"}</p>
                   </div>
-                  <div>
-                    <h4 className="text-gray-500">Email</h4>
-                    <p>{user?.email}</p>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="text-gray-500 text-sm">Email</h4>
+                    <p className="font-medium">{user?.email}</p>
                   </div>
-                  <div>
-                    <h4 className="text-gray-500">Téléphone</h4>
-                    <p>{user?.phone || "Non défini"}</p>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="text-gray-500 text-sm">Téléphone</h4>
+                    <p className="font-medium">{user?.phone || "Non défini"}</p>
                   </div>
-                  <div>
-                    <h4 className="text-gray-500">À propos de moi</h4>
-                    <p>{user?.bio || "Aucune information"}</p>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="text-gray-500 text-sm">Adresse</h4>
+                    <p className="font-medium">{user?.billingAddress || "Non définie"}</p>
                   </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="text-gray-500 text-sm">Ville</h4>
+                    <p className="font-medium">{user?.city || "Non définie"}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="text-gray-500 text-sm">Code postal</h4>
+                    <p className="font-medium">{user?.postalCode || "Non défini"}</p>
+                  </div>
+                </div>
+                
+                <div className="mt-6 bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-gray-500 text-sm">À propos de moi</h4>
+                  <p className="font-medium">{user?.bio || "Aucune information"}</p>
                 </div>
               </div>
             )}
             
+            <div className="mb-8">
+              <ul className="flex flex-col space-y-2">
+                <li className="p-3 bg-blue-50 rounded-md font-medium text-blue-800 flex items-center">
+                  <FaUser className="mr-2" />
+                  Informations personnelles
+                </li>
+                <li>
+                  <Link 
+                    to="/messages" 
+                    className="p-3 hover:bg-gray-50 rounded-md flex items-center text-gray-700 hover:text-gray-900 transition"
+                  >
+                    <FaEnvelope className="mr-2" />
+                    Messages
+                  </Link>
+                </li>
+                <li>
+                  <button className="p-3 hover:bg-gray-50 rounded-md w-full text-left flex items-center text-gray-700 hover:text-gray-900 transition">
+                    <FaHistory className="mr-2" />
+                    Historique des réservations
+                  </button>
+                </li>
+                <li>
+                  <button className="p-3 hover:bg-gray-50 rounded-md w-full text-left flex items-center text-gray-700 hover:text-gray-900 transition">
+                    <FaCreditCard className="mr-2" />
+                    Moyens de paiement
+                  </button>
+                </li>
+              </ul>
+            </div>
+            
             <div>
-              <h3 className="text-xl font-semibold mb-4">Mes réservations</h3>
+              <h3 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
+                <FaCreditCard className="mr-3" />
+                Mes réservations
+              </h3>
               {reservations.length > 0 ? (
                 <div className="space-y-4">
                   {reservations.map((reservation) => (
-                    <div key={reservation._id} className="border rounded-lg p-4 hover:shadow-md transition">
+                    <div key={reservation._id} className="bg-white border rounded-lg p-6 hover:shadow-lg transition-shadow">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-medium">{reservation.apartment?.title || "Appartement"}</h4>
+                          <h4 className="font-bold text-lg text-gray-800">{reservation.apartment?.title || "Appartement"}</h4>
                           <p className="text-gray-600">
                             {new Date(reservation.startDate).toLocaleDateString()} - {new Date(reservation.endDate).toLocaleDateString()}
                           </p>
-                          <p className="text-sm text-gray-500">
-                            Statut: <span className="font-medium">{reservation.status}</span>
+                          <p className="text-sm mt-2">
+                            Statut: <span className="font-medium px-3 py-1 bg-blue-100 text-blue-800 rounded-full">{reservation.status}</span>
                           </p>
                         </div>
-                        <span className="font-bold">{reservation.totalPrice} €</span>
+                        <span className="text-2xl font-bold text-blue-600">{reservation.totalPrice} €</span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500">Vous n'avez pas encore de réservation.</p>
+                <div className="text-center py-8 bg-gray-50 rounded-lg">
+                  <p className="text-gray-500">Vous n'avez pas encore de réservation.</p>
+                </div>
               )}
             </div>
           </div>
@@ -243,4 +378,4 @@ const Profile = () => {
   );
 };
 
-export default Profile; 
+export default Profile;
