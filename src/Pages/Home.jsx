@@ -207,7 +207,7 @@ export default function Home() {
           try {
             const capacite = parseJSON(apt.capacite);
             return typeof capacite === 'object' && capacite.sallesDeBain >= bathroomCount;
-          } catch (error) {
+      } catch (error) {
             console.error("Erreur lors du filtrage des salles de bain:", error);
             return false;
           }
@@ -529,10 +529,10 @@ export default function Home() {
               </h2>
             </div>
             
-            <motion.section
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
+      <motion.section
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
               className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
             >
               {filteredAppartements.map((apt) => {
@@ -558,22 +558,22 @@ export default function Home() {
                     transition={{ duration: 0.2 }}
                     className="bg-white border rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
                   >
-                    <Link to={`/appartement/${apt.slug}`}>
+            <Link to={`/appartement/${apt.slug}`}>
                       <div className="relative">
-                        <img
+              <img
                           className="w-full h-48 object-cover"
                           src={imageUrl}
-                          alt={apt.titre}
+                alt={apt.titre}
                           onError={(e) => {
                             e.target.onerror = null;
                             e.target.src = 'https://via.placeholder.com/300x200?text=Erreur+de+chargement';
                           }}
-                        />
+              />
                         <div className="absolute bottom-0 right-0 bg-black/70 text-white px-2 py-1 text-sm font-bold">
                           {apt.prixParNuit}€ / nuit
                         </div>
                       </div>
-                      <div className="p-5">
+              <div className="p-5">
                         <div className="flex justify-between items-start mb-2">
                           <h5 className="text-xl font-bold">{apt.titre}</h5>
                         </div>
@@ -595,8 +595,8 @@ export default function Home() {
                             {capacite.voyageurs} pers.
                           </span>
                         </div>
-                      </div>
-                    </Link>
+              </div>
+            </Link>
                   </motion.div>
                 );
               })}

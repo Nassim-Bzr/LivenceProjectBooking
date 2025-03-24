@@ -115,9 +115,13 @@ const Profile = () => {
               <div className="relative w-40 h-40 mx-auto mb-6">
                 <div className="w-full h-full rounded-full overflow-hidden ring-4 ring-blue-100">
                   <img 
-                    src={formData.avatar || "https://via.placeholder.com/150"} 
-                    alt="Profile" 
+                    src={formData.avatar ? formData.avatar : "https://via.placeholder.com/150"} 
+                    alt="Photo de profil" 
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null; // Prevent infinite loop
+                      e.target.src = "https://via.placeholder.com/150";
+                    }}
                   />
                 </div>
                 <label className="absolute bottom-2 right-2 bg-blue-600 p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors">

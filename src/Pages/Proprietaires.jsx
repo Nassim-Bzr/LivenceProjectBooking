@@ -7,7 +7,7 @@ export default function Proprietaires() {
     <div className="bg-white text-gray-900 min-h-screen">
       <section
         className="relative bg-cover bg-center bg-no-repeat py-40"
-        style={{ backgroundImage: `url("https://a0.muscache.com/im/pictures/miso/Hosting-53370166/original/3d524a8c-8f16-4642-9c71-7c4761c2fd47.jpeg")` }}
+        style={{ backgroundImage: `url("https://videocdn.cdnpk.net/videos/f2d6eec1-1e8c-4502-9454-e84a2c3c5351/horizontal/thumbnails/large.jpg")` }}
       >
         <div className="bg-black/40 absolute inset-0"></div>
         <div className="relative text-center text-white max-w-3xl mx-auto px-4">
@@ -123,9 +123,7 @@ export default function Proprietaires() {
           <p className="text-xl text-gray-600 mb-8">
             Rejoignez les propriétaires satisfaits qui nous font confiance à Metz
           </p>
-          <button className="bg-rose-600 px-8 py-4 rounded-lg text-lg font-semibold text-white hover:bg-rose-700 transition-colors shadow-lg">
-            Commencer l'estimation gratuite
-          </button>
+     
         </section>
       </div>
     </div>

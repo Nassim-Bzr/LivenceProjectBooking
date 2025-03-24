@@ -28,7 +28,9 @@ const Messages = () => {
     clearConversationMessages,
     clearAllConversations,
     setLoading,
-    setError
+    setError,
+    setConversations,
+    markConversationAsRead
   } = useMessages();
   
   const [newMessage, setNewMessage] = useState("");
@@ -80,105 +82,49 @@ const Messages = () => {
 
   // Défilement automatique lorsque les messages changent - avec protection
   useEffect(() => {
-    // Si aucun message, ne rien faire
-    if (!messages || messages.length === 0) return;
+    // Si aucun message ou pas de changement significatif, ne rien faire
+    if (!messages || messages.length === 0 || messages.length === prevMessagesLengthRef.current) return;
     
-    console.log("Défilement vers le bas déclenché - messages mis à jour");
-    const scrollToBottomOnce = () => {
-      try {
-        if (containerRef.current) {
-          containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    // Mettre à jour la référence du nombre de messages
+    prevMessagesLengthRef.current = messages.length;
+    
+    // Vérifier si nous sommes déjà en bas avant de défiler
+    const isAtBottom = containerRef.current && 
+      (containerRef.current.scrollHeight - containerRef.current.scrollTop <= containerRef.current.clientHeight + 100);
+    
+    if (isAtBottom) {
+      const scrollToBottomOnce = () => {
+        try {
+          if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+          }
+        } catch (error) {
+          // Gérer l'erreur silencieusement
         }
-      } catch (error) {
-        console.warn("Erreur scroll:", error);
-      }
-    };
+      };
 
-    // Exécuter une seule fois avec un délai
-    const timeoutId = setTimeout(scrollToBottomOnce, 100);
-    return () => clearTimeout(timeoutId);
-  }, [messages]); // N'écoute que les changements de messages
-
-  // Simuler un indicateur de synchronisation temps réel - Réduire la fréquence
-  useEffect(() => {
-    // Afficher un indicateur subtil que la synchronisation est active
-    const syncInterval = setInterval(() => {
-      // Indiquer brièvement une mise à jour en cours
-      setSyncStatus("updating");
-      setTimeout(() => setSyncStatus("active"), 500);
-    }, 10000); // Réduit à 10000ms pour moins d'animations
-    
-    return () => clearInterval(syncInterval);
-  }, []);
-
-  // Enregistrer la préférence de l'utilisateur dans le localStorage
-  useEffect(() => {
-    localStorage.setItem('message_sound_enabled', JSON.stringify(soundEnabled));
-    
-    // Désactiver/activer le son de notification globalement
-    const audio = document.querySelectorAll('audio');
-    audio.forEach(el => {
-      el.muted = !soundEnabled;
-    });
-  }, [soundEnabled]);
-
-  // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
-  useEffect(() => {
-    if (!user) {
-      navigate("/login");
+      // Exécuter une seule fois avec un délai minimal
+      const timeoutId = setTimeout(scrollToBottomOnce, 50);
+      return () => clearTimeout(timeoutId);
     }
-  }, [user, navigate]);
-
-  // Renforcer la gestion mobile
-  useEffect(() => {
-    // Fonction pour gérer les changements de taille d'écran
-    const handleResize = () => {
-      // Si on est sur mobile et une conversation est active, afficher les messages
-      if (window.innerWidth < 768 && activeConversation) {
-        setShowMobileConversations(false);
-      }
-      // Si on passe en mode desktop, toujours afficher les deux panneaux
-      else if (window.innerWidth >= 768) {
-        // Ne rien faire, les classes CSS s'en chargent
-      }
-    };
-    
-    // Appliquer immédiatement
-    handleResize();
-    
-    // Ajouter l'écouteur pour les changements de taille
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [activeConversation]);
+  }, [messages]); // N'écoute que les changements de messages
 
   // Charger les conversations au démarrage - Éviter les rechargements multiples
   useEffect(() => {
-    // Ne rien faire si nous avons déjà chargé les conversations ou si l'utilisateur n'est pas connecté
     if (!user || initialLoadDone) return;
-    
-    console.log("Chargement initial unique des conversations");
-    setInitialLoadDone(true); // Marquer comme fait AVANT de charger pour éviter les appels multiples
-    
-    loadConversations().catch(error => {
-      console.error("Erreur lors du chargement initial des conversations:", error);
+    setInitialLoadDone(true);
+    loadConversations().catch(() => {
+      setError("Erreur lors du chargement des conversations");
     });
   }, [user, loadConversations, initialLoadDone]);
 
   // Modifier la gestion de la conversation active - Simplifiée pour éviter les boucles
   useEffect(() => {
-    // Vérifier si nous avons besoin de sélectionner une conversation
-    // Condition simplifiée et plus stricte pour éviter les sélections multiples
     if (!user || !conversations.length || activeConversation) return;
-    
-    // Sélectionner la première conversation une seule fois
-    console.log("Sélection initiale automatique de la conversation");
     const firstConversation = conversations[0];
-    
-    // Sélectionner directement sans délai
     setActiveConversation(firstConversation);
     loadMessages(firstConversation.id);
     
-    // Sur mobile, ajuster l'affichage
     if (window.innerWidth < 768) {
       setShowMobileConversations(false);
     }
@@ -186,17 +132,12 @@ const Messages = () => {
 
   // Gérer le paramètre userId dans l'URL
   useEffect(() => {
-    // Ne rien faire si l'utilisateur n'est pas connecté ou si ce n'est pas un admin
     if (!user || user.role !== 'admin' || !conversations.length) return;
     
-    // Récupérer l'ID utilisateur depuis l'URL
     const searchParams = new URLSearchParams(location.search);
     const targetUserId = searchParams.get('userId');
     
     if (targetUserId) {
-      console.log(`Recherche de conversation avec l'utilisateur ID: ${targetUserId}`);
-      
-      // Chercher une conversation existante avec cet utilisateur
       const existingConversation = conversations.find(
         conv => conv.participants.some(
           p => p.id !== user.id && String(p.id) === String(targetUserId)
@@ -204,20 +145,14 @@ const Messages = () => {
       );
       
       if (existingConversation) {
-        console.log(`Conversation existante trouvée avec l'utilisateur ${targetUserId}:`, existingConversation);
-        // Sélectionner cette conversation
         loadMessages(existingConversation.id);
-        // Sur mobile, basculer vers l'affichage des messages
         if (window.innerWidth < 768) {
           setShowMobileConversations(false);
         }
       } else {
-        console.log(`Aucune conversation trouvée avec l'utilisateur ${targetUserId}, création en cours...`);
-        // Créer une nouvelle conversation
         startConversationWithUser(targetUserId);
       }
       
-      // Nettoyer l'URL pour éviter les rechargements multiples
       navigate('/messages', { replace: true });
     }
   }, [user, conversations, location.search, navigate, loadMessages, startConversationWithUser]);
@@ -231,27 +166,46 @@ const Messages = () => {
     }
   );
 
-  // Sélectionner une conversation et charger ses messages
-  const handleConversationSelect = useCallback(async (conversation) => {
-    console.log("Sélection de la conversation:", conversation);
-    
-    // Réinitialiser l'état des messages et de l'erreur
-    setMessages([]);
-    setLoading(true);
-    setError(null);
-    setMessageError(null);
-    
-    try {
-      // Charger les messages directement - la fonction loadMessages dans MessageContext gère les détails
-      await loadMessages(conversation.id);
-      console.log("Messages chargés avec succès");
-    } catch (error) {
-      console.error("Erreur lors du chargement des messages:", error);
-      setMessageError("Impossible de charger les messages. Veuillez réessayer.");
-    } finally {
-      setLoading(false);
+  // Effet pour gérer les changements de messages
+  useEffect(() => {
+    if (messages.length > 0 && activeConversation) {
+      // Mettre à jour la conversation active avec le dernier message
+      const lastMessage = messages[messages.length - 1];
+      setActiveConversation(prev => ({
+        ...prev,
+        lastMessageContent: lastMessage.content,
+        lastMessageAt: lastMessage.createdAt
+      }));
+
+      // Marquer la conversation comme lue
+      markConversationAsRead(activeConversation.id);
     }
-  }, [loadMessages]);
+  }, [messages, activeConversation, markConversationAsRead]);
+
+  // Effet pour gérer les changements de conversation active
+  useEffect(() => {
+    if (activeConversation) {
+      // Mettre à jour la liste des conversations pour refléter la conversation active
+      setConversations(prev => prev.map(conv => 
+        conv.id === activeConversation.id ? activeConversation : conv
+      ));
+    }
+  }, [activeConversation]);
+
+  // Gérer la sélection d'une conversation
+  const handleConversationSelect = useCallback(async (conversation) => {
+    try {
+      setActiveConversation(conversation);
+      await loadMessages(conversation.id);
+      markConversationAsRead(conversation.id);
+      
+      if (window.innerWidth < 768) {
+        setShowMobileConversations(false);
+      }
+    } catch (error) {
+      setError("Impossible de charger les messages");
+    }
+  }, [loadMessages, markConversationAsRead]);
 
   // Fonction pour actualiser la conversation courante
   const refreshCurrentConversation = useCallback(() => {
@@ -475,6 +429,16 @@ const Messages = () => {
     // Mettre à jour le compteur
     prevMessagesLengthRef.current = messages.length;
   }, [messages]);
+
+  // Simuler un indicateur de synchronisation temps réel - Réduire la fréquence
+  useEffect(() => {
+    const syncInterval = setInterval(() => {
+      setSyncStatus("updating");
+      setTimeout(() => setSyncStatus("active"), 500);
+    }, 30000); // Augmenté à 30 secondes
+    
+    return () => clearInterval(syncInterval);
+  }, []);
 
   if (loading && !initialLoadDone) {
     return (
