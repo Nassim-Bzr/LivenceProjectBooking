@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../Context/AuthContext';
-import MessagePreview from './MessagePreview';
 import { FaChevronDown, FaSignOutAlt } from 'react-icons/fa';
 
 export default function Navbar() {
@@ -89,10 +88,6 @@ export default function Navbar() {
                   <Link to="/profile"
                     className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px]'>Mon Profil</Link>
                 </li>
-                <li className='max-lg:border-b max-lg:py-3 px-3'>
-                  <Link to="/messages"
-                    className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px]'>Messagerie</Link>
-                </li>
                 {user?.role === 'admin' && (
                   <li className='max-lg:border-b max-lg:py-3 px-3'>
                     <div className="relative">
@@ -146,12 +141,8 @@ export default function Navbar() {
         </div>
 
         <div className='flex gap-4 ml-auto'>
-          
-          
           {user && (
             <div className="hidden lg:flex items-center space-x-4">
-              <MessagePreview />
-              
               <Link to="/profile" className="flex items-center">
                 <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 mr-2 border border-gray-300">
                   <img 

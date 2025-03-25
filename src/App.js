@@ -12,9 +12,7 @@ import Register from "./Pages/Register";
 import NotFound from "./Pages/NotFound";
 import ForgotPassword from "./Pages/ForgotPassword";
 import Profile from "./Pages/Profile";
-import Messages from "./Pages/Messages";
 import { AuthProvider } from "./Context/AuthContext";
-import { MessageProvider } from "./Context/MessageContext";
 import AddAppartement from "./Pages/Admin/AddAppartement";
 import AdminReservations from "./Pages/Admin/Reservations";
 import ClientProfile from "./Pages/Admin/ClientProfile";
@@ -24,7 +22,6 @@ import ClientProfile from "./Pages/Admin/ClientProfile";
 function App() {
   return (
     <AuthProvider>
-      <MessageProvider>
         <Router>
           <div className="min-h-screen flex flex-col">
             <Navbar />
@@ -41,7 +38,6 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/profile" element={<Profile />} />
-                <Route path="/messages" element={<Messages />} />
                 <Route path="*" element={<NotFound />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
 
@@ -50,7 +46,6 @@ function App() {
             <Footer />
           </div>
         </Router>
-      </MessageProvider>
     </AuthProvider>
   );
 }
