@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../Context/AuthContext";
 import axios from "axios";
-import { FaUser, FaCalendarAlt, FaPhoneAlt, FaEnvelope, FaMapMarkerAlt, FaCreditCard, FaBirthdayCake, FaHistory, FaArrowLeft, FaExclamationTriangle } from "react-icons/fa";
+import { FaUser, FaCalendarAlt, FaPhoneAlt, FaEnvelope, FaMapMarkerAlt, FaCreditCard, FaBirthdayCake, FaHistory, FaArrowLeft, FaExclamationTriangle, FaPaperPlane } from "react-icons/fa";
+import io from "socket.io-client";
 
 const ClientProfile = () => {
   const { userId } = useParams();
@@ -13,6 +14,11 @@ const ClientProfile = () => {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [socket, setSocket] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const messagesEndRef = useRef(null);
 
   // Vérifier si l'utilisateur est admin
   useEffect(() => {
@@ -24,6 +30,10 @@ const ClientProfile = () => {
     console.log("Chargement du profil client avec ID:", userId);
     console.log("Type d'ID:", typeof userId);
 
+    // Préparer l'en-tête d'autorisation
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+
     const fetchClientData = async () => {
       setLoading(true);
       try {
@@ -33,7 +43,10 @@ const ClientProfile = () => {
         try {
           // Essayer d'abord de récupérer l'utilisateur par son ID
           console.log("Tentative de récupération du client à l'URL:", `http://localhost:5000/users/${userId}`);
-          const response = await axios.get(`http://localhost:5000/users/${userId}`, { withCredentials: true });
+          const response = await axios.get(`http://localhost:5000/users/${userId}`, { 
+            withCredentials: true,
+            headers: authHeader 
+          });
           clientInfo = response.data;
           console.log("Données client récupérées avec succès:", clientInfo);
         } catch (err) {
@@ -42,7 +55,10 @@ const ClientProfile = () => {
           // Essayons de récupérer l'utilisateur depuis les réservations
           try {
             console.log("Tentative de récupération des réservations pour trouver les informations utilisateur");
-            const allReservationsResponse = await axios.get("http://localhost:5000/reservations/all", { withCredentials: true });
+            const allReservationsResponse = await axios.get("http://localhost:5000/reservations/all", { 
+              withCredentials: true,
+              headers: authHeader 
+            });
             const userReservation = allReservationsResponse.data.find(res => String(res.user?.id) === String(userId));
             
             if (userReservation && userReservation.user) {
@@ -97,7 +113,10 @@ const ClientProfile = () => {
         try {
           // Utiliser l'endpoint spécifique pour les réservations d'un client
           console.log("Récupération des réservations du client");
-          const userReservationsResponse = await axios.get("http://localhost:5000/reservations/user", { withCredentials: true });
+          const userReservationsResponse = await axios.get("http://localhost:5000/reservations/user", { 
+            withCredentials: true,
+            headers: authHeader 
+          });
           userReservations = userReservationsResponse.data;
           console.log(`${userReservations.length} réservations trouvées pour l'utilisateur ${userId}`);
         } catch (err) {
@@ -117,6 +136,163 @@ const ClientProfile = () => {
     fetchClientData();
   }, [userId, user, navigate]);
 
+  // Initialiser socket.io et récupérer les messages
+  useEffect(() => {
+    if (!user || !clientData) return;
+
+    // Connexion à socket.io
+    const newSocket = io("http://localhost:5000");
+    setSocket(newSocket);
+
+    // Authentification avec le token JWT
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+    
+    if (token) {
+      newSocket.emit("authenticate", token);
+    }
+
+    // Gestion des événements socket
+    newSocket.on("authenticated", async () => {
+      console.log("Socket.io authentifié");
+      await fetchMessages(authHeader);
+    });
+
+    newSocket.on("auth_error", (error) => {
+      console.error("Erreur d'authentification socket:", error);
+      // On essaie quand même de récupérer les messages
+      fetchMessages(authHeader);
+    });
+
+    newSocket.on("new_message", (message) => {
+      if (message.senderId === parseInt(userId) || message.receiverId === parseInt(userId)) {
+        setMessages(prevMessages => [...prevMessages, message]);
+      }
+    });
+
+    // Récupérer les messages
+    const fetchMessages = async (headers = {}) => {
+      setLoadingMessages(true);
+      try {
+        const response = await axios.get(`http://localhost:5000/messages/utilisateur/${userId}`, {
+          withCredentials: true,
+          headers
+        });
+        setMessages(response.data);
+      } catch (err) {
+        console.error("Erreur lors de la récupération des messages:", err);
+        // En cas d'erreur, utiliser un tableau vide
+        setMessages([]);
+      } finally {
+        setLoadingMessages(false);
+      }
+    };
+
+    // Nettoyer à la déconnexion
+    return () => {
+      if (newSocket) {
+        newSocket.disconnect();
+      }
+    };
+  }, [user, userId, clientData]);
+
+  // Défiler automatiquement vers le dernier message
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
+  // Envoyer un nouveau message
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    // Stocker le message localement pour éviter d'attendre la réponse du serveur
+    const tempMessage = {
+      id: `temp-${new Date().getTime()}`,
+      senderId: user.id,
+      receiverId: parseInt(userId, 10),
+      contenu: newMessage,
+      type: "general",
+      createdAt: new Date().toISOString(),
+      isTemp: true // Marquer comme temporaire pour pouvoir le remplacer plus tard
+    };
+    
+    // Ajouter immédiatement le message à l'interface
+    setMessages(prevMessages => [...prevMessages, tempMessage]);
+    
+    // Réinitialiser le champ de texte
+    setNewMessage("");
+
+    try {
+      // S'assurer que userId est bien un nombre
+      const receiverId = parseInt(userId, 10);
+      
+      console.log("Envoi d'un message au client:", receiverId);
+      console.log("Contenu du message:", newMessage);
+      
+      // Récupérer le token et préparer l'en-tête d'autorisation
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+      
+      const response = await axios.post("http://localhost:5000/messages/envoyer", {
+        receiverId,
+        contenu: newMessage,
+        type: "general"
+      }, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeader
+        }
+      });
+
+      console.log("Réponse du serveur:", response.data);
+
+      // Récupérer le message confirmé
+      const sentMessage = response.data;
+      
+      // Remplacer le message temporaire par le message confirmé
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === tempMessage.id 
+            ? {
+                ...sentMessage,
+                senderId: user.id,
+                receiverId
+              }
+            : msg
+        )
+      );
+      
+      // Émettre l'événement socket.io
+      if (socket) {
+        socket.emit("send_message", {
+          id: sentMessage.id,
+          senderId: user.id,
+          receiverId,
+          contenu: newMessage,
+          createdAt: sentMessage.createdAt
+        });
+      }
+    } catch (err) {
+      console.error("Erreur lors de l'envoi du message:", err);
+      console.error("Détails de l'erreur:", err.response?.data || err.message);
+      
+      // En cas d'erreur, marquer le message temporaire comme erreur
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === tempMessage.id 
+            ? { ...msg, error: true, isTemp: false }
+            : msg
+        )
+      );
+      
+      alert("Erreur lors de l'envoi du message. Veuillez réessayer.");
+    }
+  };
+
   // Fonction pour formater une date
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -127,8 +303,18 @@ const ClientProfile = () => {
       year: 'numeric'
     });
   };
+  
+  // Fonction pour formater l'heure d'un message
+  const formatMessageTime = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
-  // Fonction pour extraire la première image d'un tableau d'images JSON
+  // Extraire la première image d'un tableau d'images JSON
   const getFirstImage = (imagesJson) => {
     try {
       const images = JSON.parse(imagesJson);
@@ -205,6 +391,7 @@ const ClientProfile = () => {
             <ul className="list-disc list-inside text-sm ml-2 mt-1">
               <li><code>/users/:userId</code> - Pour récupérer les infos du client</li>
               <li><code>/reservations/user/:userId</code> - Pour récupérer les réservations du client</li>
+              <li><code>/messages/utilisateur/:userId</code> - Pour récupérer les messages</li>
             </ul>
           </div>
         </div>
@@ -260,6 +447,99 @@ const ClientProfile = () => {
           <h3 className="text-lg font-semibold mb-4">Préférences</h3>
           <p className="text-gray-600">{clientData.preferences}</p>
         </div>
+      </div>
+
+      {/* Section de messagerie avec le client */}
+      <div className="bg-white shadow rounded-lg p-6 mb-6">
+        <h2 className="text-2xl font-semibold mb-6 flex items-center">
+          <FaEnvelope className="mr-2" />
+          Messagerie avec le client
+        </h2>
+
+        {loadingMessages ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-rose-500"></div>
+          </div>
+        ) : (
+          <div className="flex flex-col h-96">
+            <div className="flex-1 overflow-y-auto px-4 py-2 bg-gray-50 rounded-lg mb-4">
+              {messages.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-gray-500">
+                  Aucun message avec ce client
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {messages.map((message) => {
+                    const isFromAdmin = message.senderId === user.id;
+                    return (
+                      <div 
+                        key={message.id} 
+                        className={`flex ${isFromAdmin ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div 
+                          className={`max-w-3/4 rounded-lg px-4 py-2 ${
+                            isFromAdmin 
+                              ? message.error 
+                                ? 'bg-red-100 text-red-800 border border-red-300' 
+                                : message.isTemp 
+                                  ? 'bg-rose-50 text-rose-800 border border-rose-200' 
+                                  : 'bg-rose-100 text-rose-800'
+                              : 'bg-gray-200 text-gray-800'
+                          }`}
+                        >
+                          <div className="text-sm relative">
+                            {message.contenu}
+                            {message.isTemp && (
+                              <div className="absolute -bottom-4 right-0 text-xs text-rose-500">
+                                Envoi en cours...
+                              </div>
+                            )}
+                            {message.error && (
+                              <div className="absolute -bottom-4 right-0 text-xs text-red-500">
+                                Échec de l'envoi
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-xs text-right mt-1 flex items-center justify-end">
+                            {formatMessageTime(message.createdAt)}
+                            {message.isTemp && (
+                              <svg className="ml-1 animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                            )}
+                            {message.error && (
+                              <svg className="ml-1 h-3 w-3 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleSendMessage} className="flex items-center">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Tapez votre message..."
+                className="flex-1 border rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-rose-500"
+              />
+              <button
+                type="submit"
+                className="bg-rose-600 text-white px-4 py-2 rounded-r-lg hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500"
+              >
+                <FaPaperPlane />
+              </button>
+            </form>
+          </div>
+        )}
       </div>
 
       {/* Historique des réservations */}

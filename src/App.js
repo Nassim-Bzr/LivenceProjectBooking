@@ -12,6 +12,7 @@ import Register from "./Pages/Register";
 import NotFound from "./Pages/NotFound";
 import ForgotPassword from "./Pages/ForgotPassword";
 import Profile from "./Pages/Profile";
+import Messagerie from "./Pages/Messagerie";
 import { AuthProvider } from "./Context/AuthContext";
 import AddAppartement from "./Pages/Admin/AddAppartement";
 import AdminReservations from "./Pages/Admin/Reservations";
@@ -38,6 +39,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/messagerie" element={<Messagerie />} />
                 <Route path="*" element={<NotFound />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
 
