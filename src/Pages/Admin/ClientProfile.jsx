@@ -18,7 +18,9 @@ const ClientProfile = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   // Vérifier si l'utilisateur est admin
   useEffect(() => {
@@ -164,9 +166,44 @@ const ClientProfile = () => {
       fetchMessages(authHeader);
     });
 
+    // Écouter l'événement de nouveaux messages
     newSocket.on("new_message", (message) => {
       if (message.senderId === parseInt(userId) || message.receiverId === parseInt(userId)) {
         setMessages(prevMessages => [...prevMessages, message]);
+        
+        // Marquer automatiquement comme lu si le message vient du client
+        if (message.senderId === parseInt(userId)) {
+          // Marquer le message comme lu instantanément si on le reçoit dans la conversation active
+          markMessageAsRead(message.id);
+        }
+      }
+    });
+    
+    // Écouter l'événement de lecture des messages
+    newSocket.on("messages_read", (data) => {
+      console.log("Messages marqués comme lus:", data);
+      // Mettre à jour les messages envoyés par l'utilisateur courant qui ont été lus
+      if (parseInt(data.receiverId) === parseInt(userId)) {
+        setMessages(prevMessages => 
+          prevMessages.map(msg => 
+            data.messageIds.includes(msg.id) ? { ...msg, lu: true } : msg
+          )
+        );
+      }
+    });
+    
+    // Écouter les événements "est en train d'écrire"
+    newSocket.on("typing_start", (senderId) => {
+      console.log("Utilisateur", senderId, "est en train d'écrire");
+      if (senderId === parseInt(userId)) {
+        setIsTyping(true);
+      }
+    });
+    
+    newSocket.on("typing_stop", (senderId) => {
+      console.log("Utilisateur", senderId, "a arrêté d'écrire");
+      if (senderId === parseInt(userId)) {
+        setIsTyping(false);
       }
     });
 
@@ -178,7 +215,42 @@ const ClientProfile = () => {
           withCredentials: true,
           headers
         });
+        
+        // Afficher immédiatement les messages
         setMessages(response.data);
+        
+        // Marquer automatiquement les messages de l'utilisateur comme lus
+        const unreadMessages = response.data.filter(msg => 
+          msg.senderId === parseInt(userId, 10) && !msg.lu
+        );
+        
+        if (unreadMessages.length > 0) {
+          console.log(`Marquage de ${unreadMessages.length} messages comme lus`);
+          
+          // Requête pour marquer les messages comme lus
+          try {
+            await axios.post(`http://localhost:5000/messages/marquer-lus`, {
+              messageIds: unreadMessages.map(msg => msg.id)
+            }, {
+              withCredentials: true,
+              headers: {
+                'Content-Type': 'application/json',
+                ...headers
+              }
+            });
+            
+            // Mettre à jour les messages dans l'état avec lu=true
+            setMessages(prevMessages => 
+              prevMessages.map(msg => 
+                msg.senderId === parseInt(userId, 10) && !msg.lu 
+                  ? {...msg, lu: true} 
+                  : msg
+              )
+            );
+          } catch (err) {
+            console.error("Erreur lors du marquage des messages comme lus:", err);
+          }
+        }
       } catch (err) {
         console.error("Erreur lors de la récupération des messages:", err);
         // En cas d'erreur, utiliser un tableau vide
@@ -190,8 +262,17 @@ const ClientProfile = () => {
 
     // Nettoyer à la déconnexion
     return () => {
-      if (newSocket) {
-        newSocket.disconnect();
+      if (socket) {
+        // Arrêter tous les événements "est en train d'écrire" en cours
+        socket.emit("typing_stop", parseInt(userId, 10));
+        
+        // Nettoyer les timeouts
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+        
+        // Déconnecter
+        socket.disconnect();
       }
     };
   }, [user, userId, clientData]);
@@ -201,7 +282,7 @@ const ClientProfile = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [messages, isTyping]);
 
   // Envoyer un nouveau message
   const handleSendMessage = async (e) => {
@@ -293,6 +374,34 @@ const ClientProfile = () => {
     }
   };
 
+  // Gérer la saisie du message et envoyer les notifications "est en train d'écrire"
+  const handleMessageInput = (e) => {
+    const value = e.target.value;
+    setNewMessage(value);
+    
+    // Envoyer l'événement "est en train d'écrire" si l'utilisateur commence à écrire
+    if (socket && value && !newMessage) {
+      socket.emit("typing_start", parseInt(userId, 10));
+    }
+    
+    // Effacer le timeout précédent
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Définir un nouveau timeout pour arrêter l'événement "est en train d'écrire"
+    typingTimeoutRef.current = setTimeout(() => {
+      if (socket && value) {
+        socket.emit("typing_stop", parseInt(userId, 10));
+      }
+    }, 1000); // Après 1 seconde d'inactivité
+    
+    // Si le champ est vide, envoyer immédiatement l'événement d'arrêt
+    if (socket && !value) {
+      socket.emit("typing_stop", parseInt(userId, 10));
+    }
+  };
+
   // Fonction pour formater une date
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -334,6 +443,36 @@ const ClientProfile = () => {
       case "annulée": return "bg-red-100 text-red-800";
       case "terminée": return "bg-blue-100 text-blue-800";
       default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  // Fonction pour marquer un seul message comme lu
+  const markMessageAsRead = async (messageId) => {
+    try {
+      // Récupérer le token et préparer l'en-tête d'autorisation
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+      
+      await axios.post(`http://localhost:5000/messages/marquer-lus`, {
+        messageIds: [messageId]
+      }, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeader
+        }
+      });
+      
+      // Mettre à jour le statut du message dans l'état local
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === messageId ? {...msg, lu: true} : msg
+        )
+      );
+      
+      console.log("Message marqué comme lu instantanément:", messageId);
+    } catch (err) {
+      console.error("Erreur lors du marquage instantané du message comme lu:", err);
     }
   };
 
@@ -513,11 +652,46 @@ const ClientProfile = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
                             )}
+                            {isFromAdmin && !message.isTemp && !message.error && (
+                              <span className="ml-1 flex items-center" title={message.lu ? "Lu" : "Non lu"}>
+                                {message.lu ? (
+                                  <>
+                                    <span className="text-xs text-blue-500 mr-1">Lu</span>
+                                    <svg className="h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                    </svg>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="text-xs text-gray-400 mr-1">Non lu</span>
+                                    <svg className="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z"/>
+                                    </svg>
+                                  </>
+                                )}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
                     );
                   })}
+                  {isTyping && (
+                    <div className="flex justify-start">
+                      <div className="bg-gray-100 text-gray-600 rounded-lg px-4 py-2 max-w-max">
+                        <div className="flex items-center">
+                          <span className="text-sm mr-2">
+                            <span className="font-semibold">{clientData.nom}</span> est en train d'écrire
+                          </span>
+                          <span className="flex space-x-1">
+                            <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                            <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "200ms" }}></span>
+                            <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "400ms" }}></span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
               )}
@@ -527,7 +701,7 @@ const ClientProfile = () => {
               <input
                 type="text"
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={handleMessageInput}
                 placeholder="Tapez votre message..."
                 className="flex-1 border rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-rose-500"
               />

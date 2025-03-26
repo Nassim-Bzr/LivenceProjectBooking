@@ -18,7 +18,9 @@ const Messagerie = () => {
   const [messageType, setMessageType] = useState("general");
   const [appartements, setAppartements] = useState([]);
   const [selectedAppartement, setSelectedAppartement] = useState(null);
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   // Rediriger si non connecté
   useEffect(() => {
@@ -83,8 +85,22 @@ const Messagerie = () => {
     // Nettoyer à la déconnexion
     return () => {
       console.log("Nettoyage des ressources socket");
-      if (newSocket) {
-        newSocket.disconnect();
+      if (socket) {
+        // Arrêter tous les événements "est en train d'écrire" en cours
+        if (selectedContact) {
+          const receiverId = parseInt(selectedContact.id, 10);
+          if (!isNaN(receiverId)) {
+            socket.emit("typing_stop", receiverId);
+          }
+        }
+        
+        // Nettoyer les timeouts
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+        
+        // Déconnecter
+        socket.disconnect();
       }
     };
   }, [user, navigate]);
@@ -105,6 +121,11 @@ const Messagerie = () => {
       if (isRelevantMessage) {
         console.log("Message ajouté à la conversation courante");
         setMessages(prevMessages => [...prevMessages, message]);
+        
+        // Marquer automatiquement comme lu si c'est un message entrant dans la conversation active
+        if (message.senderId === parseInt(selectedContact.id, 10)) {
+          markMessageAsRead(message.id);
+        }
       } else {
         console.log("Message ignoré car il ne concerne pas la conversation courante");
       }
@@ -113,9 +134,42 @@ const Messagerie = () => {
     // S'abonner à l'événement
     socket.on("new_message", handleNewMessage);
     
+    // Écouter l'événement de lecture des messages
+    socket.on("messages_read", (data) => {
+      console.log("Messages marqués comme lus:", data);
+      
+      // Si l'utilisateur est en conversation avec la personne qui a lu ses messages
+      if (selectedContact && parseInt(data.receiverId) === parseInt(selectedContact.id)) {
+        // Mettre à jour les messages envoyés par l'utilisateur courant qui ont été lus
+        setMessages(prevMessages => 
+          prevMessages.map(msg => 
+            data.messageIds.includes(msg.id) ? { ...msg, lu: true } : msg
+          )
+        );
+      }
+    });
+    
+    // Écouter les événements "est en train d'écrire"
+    socket.on("typing_start", (senderId) => {
+      console.log("Utilisateur", senderId, "est en train d'écrire");
+      if (senderId === parseInt(selectedContact.id, 10)) {
+        setIsTyping(true);
+      }
+    });
+    
+    socket.on("typing_stop", (senderId) => {
+      console.log("Utilisateur", senderId, "a arrêté d'écrire");
+      if (senderId === parseInt(selectedContact.id, 10)) {
+        setIsTyping(false);
+      }
+    });
+    
     // Nettoyer l'abonnement quand le contact change ou le composant est démonté
     return () => {
       socket.off("new_message", handleNewMessage);
+      socket.off("typing_start");
+      socket.off("typing_stop");
+      socket.off("messages_read");
     };
   }, [socket, selectedContact, user]);
 
@@ -124,7 +178,7 @@ const Messagerie = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [messages, isTyping]);
 
   // Si l'utilisateur sélectionne un contact, charger les messages
   useEffect(() => {
@@ -218,8 +272,44 @@ const Messagerie = () => {
         withCredentials: true,
         headers: authHeader
       });
+      
       console.log("Messages récupérés:", response.data.length);
+      
+      // Si des messages sont reçus, on les affiche tout de suite
       setMessages(response.data);
+      
+      // Marquer automatiquement et immédiatement les messages de l'interlocuteur comme lus
+      const unreadMessages = response.data.filter(msg => 
+        msg.senderId === parseInt(contactId, 10) && !msg.lu
+      );
+      
+      if (unreadMessages.length > 0) {
+        console.log(`Marquage de ${unreadMessages.length} messages comme lus`);
+        
+        // Requête pour marquer les messages comme lus
+        try {
+          await axios.post(`http://localhost:5000/messages/marquer-lus`, {
+            messageIds: unreadMessages.map(msg => msg.id)
+          }, {
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'application/json',
+              ...authHeader
+            }
+          });
+          
+          // Mettre à jour les messages dans l'état avec lu=true
+          setMessages(prevMessages => 
+            prevMessages.map(msg => 
+              msg.senderId === parseInt(contactId, 10) && !msg.lu 
+                ? {...msg, lu: true} 
+                : msg
+            )
+          );
+        } catch (err) {
+          console.error("Erreur lors du marquage des messages comme lus:", err);
+        }
+      }
     } catch (err) {
       console.error("Erreur lors du chargement des messages:", err);
       console.error("Détails:", err.response?.data || err.message);
@@ -379,6 +469,36 @@ const Messagerie = () => {
     setMessageType("support");
   };
 
+  // Fonction pour marquer un seul message comme lu
+  const markMessageAsRead = async (messageId) => {
+    try {
+      // Récupérer le token et préparer l'en-tête d'autorisation
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+      
+      await axios.post(`http://localhost:5000/messages/marquer-lus`, {
+        messageIds: [messageId]
+      }, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeader
+        }
+      });
+      
+      // Mettre à jour le statut du message dans l'état local
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === messageId ? {...msg, lu: true} : msg
+        )
+      );
+      
+      console.log("Message marqué comme lu instantanément:", messageId);
+    } catch (err) {
+      console.error("Erreur lors du marquage instantané du message comme lu:", err);
+    }
+  };
+
   // Formater l'heure des messages
   const formatMessageTime = (dateString) => {
     if (!dateString) return "";
@@ -387,6 +507,39 @@ const Messagerie = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // Gérer la saisie du message et envoyer les notifications "est en train d'écrire"
+  const handleMessageInput = (e) => {
+    const value = e.target.value;
+    setNewMessage(value);
+    
+    if (!socket || !selectedContact) return;
+    
+    const receiverId = parseInt(selectedContact.id, 10);
+    if (isNaN(receiverId)) return;
+    
+    // Envoyer l'événement "est en train d'écrire" si l'utilisateur commence à écrire
+    if (value && !newMessage) {
+      socket.emit("typing_start", receiverId);
+    }
+    
+    // Effacer le timeout précédent
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Définir un nouveau timeout pour arrêter l'événement "est en train d'écrire"
+    typingTimeoutRef.current = setTimeout(() => {
+      if (value) {
+        socket.emit("typing_stop", receiverId);
+      }
+    }, 1000); // Après 1 seconde d'inactivité
+    
+    // Si le champ est vide, envoyer immédiatement l'événement d'arrêt
+    if (!value) {
+      socket.emit("typing_stop", receiverId);
+    }
   };
 
   if (loading && !selectedContact) {
@@ -529,11 +682,46 @@ const Messagerie = () => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                   </svg>
                                 )}
+                                {isFromCurrentUser && !message.isTemp && !message.error && (
+                                  <span className="ml-1 flex items-center" title={message.lu ? "Lu" : "Non lu"}>
+                                    {message.lu ? (
+                                      <>
+                                        <span className="text-xs text-blue-500 mr-1">Lu</span>
+                                        <svg className="h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                        </svg>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span className="text-xs text-gray-400 mr-1">Non lu</span>
+                                        <svg className="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z"/>
+                                        </svg>
+                                      </>
+                                    )}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
                         );
                       })}
+                      {isTyping && (
+                        <div className="flex justify-start">
+                          <div className="bg-gray-100 text-gray-600 rounded-lg px-4 py-2 max-w-max">
+                            <div className="flex items-center">
+                              <span className="text-sm mr-2">
+                                <span className="font-semibold">{selectedContact.nom}</span> est en train d'écrire
+                              </span>
+                              <span className="flex space-x-1">
+                                <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                                <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "200ms" }}></span>
+                                <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "400ms" }}></span>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       <div ref={messagesEndRef} />
                     </div>
                   )}
@@ -597,7 +785,7 @@ const Messagerie = () => {
                   <input
                     type="text"
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={handleMessageInput}
                     placeholder="Tapez votre message..."
                     className="flex-1 border rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-rose-500"
                   />
