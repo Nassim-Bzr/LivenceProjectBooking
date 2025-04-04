@@ -202,17 +202,24 @@ const Messagerie = () => {
     
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:5000/messages/conversations", {
+      const response = await axios.get("http://localhost:5000/api/messages/conversations", {
         withCredentials: true,
         headers: authHeader
       });
       
-      console.log("Contacts récupérés:", response.data);
+      console.log("Contacts récupérés (brut):", response.data);
+      
+      // Filtrer les conversations pour ne garder que celles qui concernent l'utilisateur courant
+      const filteredContacts = response.data.filter(contact => 
+        contact.id !== user.id
+      );
+      
+      console.log("Contacts filtrés:", filteredContacts);
       
       // Si aucune conversation avec un admin n'existe, créer une option de support par défaut
-      let hasAdmin = response.data.some(contact => contact.role === "admin");
+      let hasAdmin = filteredContacts.some(contact => contact.role === "admin");
       
-      let contactsList = [...response.data];
+      let contactsList = [...filteredContacts];
       
       if (!hasAdmin) {
         // Ajouter un contact de support
@@ -268,18 +275,27 @@ const Messagerie = () => {
     const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
 
     try {
-      const response = await axios.get(`http://localhost:5000/messages/utilisateur/${contactId}`, {
+      const response = await axios.get(`http://localhost:5000/api/messages/utilisateur/${contactId}`, {
         withCredentials: true,
         headers: authHeader
       });
       
-      console.log("Messages récupérés:", response.data.length);
+      console.log("Messages récupérés (brut):", response.data.length);
       
-      // Si des messages sont reçus, on les affiche tout de suite
-      setMessages(response.data);
+      // Filtrer les messages pour ne garder que ceux qui concernent la conversation
+      // entre l'utilisateur courant et le contact sélectionné
+      const filteredMessages = response.data.filter(message => 
+        (message.senderId === user.id && message.receiverId === parseInt(contactId, 10)) ||
+        (message.senderId === parseInt(contactId, 10) && message.receiverId === user.id)
+      );
+      
+      console.log("Messages filtrés pour cette conversation:", filteredMessages.length);
+      
+      // Afficher les messages filtrés
+      setMessages(filteredMessages);
       
       // Marquer automatiquement et immédiatement les messages de l'interlocuteur comme lus
-      const unreadMessages = response.data.filter(msg => 
+      const unreadMessages = filteredMessages.filter(msg => 
         msg.senderId === parseInt(contactId, 10) && !msg.lu
       );
       
@@ -288,7 +304,7 @@ const Messagerie = () => {
         
         // Requête pour marquer les messages comme lus
         try {
-          await axios.post(`http://localhost:5000/messages/marquer-lus`, {
+          await axios.post(`http://localhost:5000/api/messages/marquer-lus`, {
             messageIds: unreadMessages.map(msg => msg.id)
           }, {
             withCredentials: true,
@@ -369,7 +385,7 @@ const Messagerie = () => {
 
       console.log("Données du message à envoyer:", messageData);
       
-      const response = await axios.post("http://localhost:5000/messages/envoyer", messageData, {
+      const response = await axios.post("http://localhost:5000/api/messages/envoyer", messageData, {
         withCredentials: true,
         headers: {
           'Content-Type': 'application/json',
@@ -476,7 +492,7 @@ const Messagerie = () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
       
-      await axios.post(`http://localhost:5000/messages/marquer-lus`, {
+      await axios.post(`http://localhost:5000/api/messages/marquer-lus`, {
         messageIds: [messageId]
       }, {
         withCredentials: true,

@@ -168,7 +168,13 @@ const ClientProfile = () => {
 
     // Écouter l'événement de nouveaux messages
     newSocket.on("new_message", (message) => {
-      if (message.senderId === parseInt(userId) || message.receiverId === parseInt(userId)) {
+      // Vérifier que ce message concerne bien la conversation entre l'admin et cet utilisateur spécifique
+      const isRelevantMessage = 
+        (message.senderId === parseInt(userId) && message.receiverId === user.id) || 
+        (message.senderId === user.id && message.receiverId === parseInt(userId));
+      
+      if (isRelevantMessage) {
+        console.log("Message ajouté à la conversation avec l'utilisateur", userId);
         setMessages(prevMessages => [...prevMessages, message]);
         
         // Marquer automatiquement comme lu si le message vient du client
@@ -176,6 +182,8 @@ const ClientProfile = () => {
           // Marquer le message comme lu instantanément si on le reçoit dans la conversation active
           markMessageAsRead(message.id);
         }
+      } else {
+        console.log("Message ignoré car il ne concerne pas cette conversation");
       }
     });
     
@@ -211,16 +219,27 @@ const ClientProfile = () => {
     const fetchMessages = async (headers = {}) => {
       setLoadingMessages(true);
       try {
-        const response = await axios.get(`http://localhost:5000/messages/utilisateur/${userId}`, {
+        const response = await axios.get(`http://localhost:5000/api/messages/utilisateur/${userId}`, {
           withCredentials: true,
           headers
         });
         
-        // Afficher immédiatement les messages
-        setMessages(response.data);
+        console.log("Messages récupérés:", response.data.length);
+        
+        // Filtrer les messages pour ne garder que ceux qui concernent la conversation
+        // entre l'admin actuel et l'utilisateur sélectionné
+        const relevantMessages = response.data.filter(message => 
+          (message.senderId === user.id && message.receiverId === parseInt(userId)) ||
+          (message.senderId === parseInt(userId) && message.receiverId === user.id)
+        );
+        
+        console.log("Messages filtrés pour cette conversation:", relevantMessages.length);
+        
+        // Afficher les messages filtrés
+        setMessages(relevantMessages);
         
         // Marquer automatiquement les messages de l'utilisateur comme lus
-        const unreadMessages = response.data.filter(msg => 
+        const unreadMessages = relevantMessages.filter(msg => 
           msg.senderId === parseInt(userId, 10) && !msg.lu
         );
         
@@ -229,7 +248,7 @@ const ClientProfile = () => {
           
           // Requête pour marquer les messages comme lus
           try {
-            await axios.post(`http://localhost:5000/messages/marquer-lus`, {
+            await axios.post(`http://localhost:5000/api/messages/marquer-lus`, {
               messageIds: unreadMessages.map(msg => msg.id)
             }, {
               withCredentials: true,
@@ -317,7 +336,7 @@ const ClientProfile = () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
       
-      const response = await axios.post("http://localhost:5000/messages/envoyer", {
+      const response = await axios.post("http://localhost:5000/api/messages/envoyer", {
         receiverId,
         contenu: newMessage,
         type: "general"
@@ -453,7 +472,7 @@ const ClientProfile = () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
       
-      await axios.post(`http://localhost:5000/messages/marquer-lus`, {
+      await axios.post(`http://localhost:5000/api/messages/marquer-lus`, {
         messageIds: [messageId]
       }, {
         withCredentials: true,

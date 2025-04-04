@@ -3,7 +3,7 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import axios from "axios";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { FaStar, FaParking, FaWifi, FaBath, FaBed, FaUser, FaChevronRight } from "react-icons/fa";
+import { FaStar, FaParking, FaWifi, FaBath, FaBed, FaUser, FaChevronRight, FaImage } from "react-icons/fa";
 import { useAuth } from "../Context/AuthContext";
 
 const AppartementDetails = () => {
@@ -16,15 +16,18 @@ const AppartementDetails = () => {
   const [totalPrice, setTotalPrice] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [imageError, setImageError] = useState(false);
+  const [showSmoobuBooking, setShowSmoobuBooking] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const resAppart = await axios.get(`http://localhost:5000/api/appartements/slug/${slug}`);
+        console.log("Données reçues de l'API:", resAppart.data);
         setAppartement(resAppart.data);
+        setImageError(false);
     
         const resDispo = await axios.get(`http://localhost:5000/api/appartements/disponibilites/${resAppart.data.id}`);
-        // Convert dates to Date objects when setting them
         const dates = resDispo.data.map(d => {
           const date = new Date(d.date);
           return isNaN(date.getTime()) ? null : date;
@@ -39,6 +42,55 @@ const AppartementDetails = () => {
     fetchData();
   }, [slug]);
 
+  const parseJSON = (str) => {
+    if (!str) return null;
+    try {
+      return JSON.parse(str);
+    } catch (error) {
+      console.error("Erreur de parsing JSON:", error);
+      return null;
+    }
+  };
+
+  const getImages = (imagesStr) => {
+    if (!imagesStr) return [];
+    
+    // Cas particulier pour les images
+    if (typeof imagesStr === 'string') {
+      // Approche directe pour extraire l'URL de l'image
+      const urlPattern = /https:\/\/[^"\\]+/g;
+      const matches = imagesStr.match(urlPattern);
+      if (matches && matches.length > 0) {
+        console.log("URLs extraites:", matches);
+        return matches;
+      }
+      
+      // Si l'extraction d'URL a échoué, essayons de nettoyer et parser
+      try {
+        // Enlever tous les backslashes
+        let cleaned = imagesStr.replace(/\\/g, '');
+        // Enlever les guillemets au début et à la fin
+        if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+          cleaned = cleaned.slice(1, -1);
+        }
+        const parsed = JSON.parse(cleaned);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      } catch (e) {
+        console.log("Échec du nettoyage et parsing:", e);
+      }
+    }
+    
+    // En cas d'échec, on essaie simplement de parser
+    const parsed = parseJSON(imagesStr);
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+    
+    return [];
+  };
+
   const isDateDisabled = (date) => {
     if (!Array.isArray(datesBloquees)) return false;
     return datesBloquees.some(blockedDate => {
@@ -48,17 +100,8 @@ const AppartementDetails = () => {
     });
   };
 
-  const parseJSON = (str) => {
-    try {
-      const parsed = JSON.parse(str);
-      return parsed;
-    } catch (e) {
-      // Si JSON.parse échoue, retourner la valeur d'origine ou un objet/tableau vide selon le contexte
-      return typeof str === 'string' ? str : {};
-    }
-  };
-
   const getCapaciteValue = (key, defaultValue = 0) => {
+    if (!appartement?.capacite) return defaultValue;
     const capacite = parseJSON(appartement.capacite);
     return (capacite && typeof capacite === 'object' && capacite[key] !== undefined) 
       ? capacite[key] 
@@ -118,6 +161,74 @@ const AppartementDetails = () => {
     ));
   };
 
+  // Fonction pour intégrer le widget Smoobu
+  const getSmoobuWidget = () => {
+    // Vérifier si l'appartement a un ID Smoobu
+    if (!appartement || !appartement.smoobuId) return null;
+    
+    const divId = `apartmentIframe${appartement.smoobuId}`;
+    // Utiliser l'ID d'hôte stocké dans l'appartement ou l'ID par défaut
+    const hosteId = appartement.smoobuHosteId || '1134658';
+    
+    // Retourner le widget sous forme de JSX
+    return (
+      <div id={divId}>
+        <div dangerouslySetInnerHTML={{
+          __html: `
+            <script type="text/javascript" src="https://login.smoobu.com/js/Settings/BookingToolIframe.js"></script>
+            <script>
+              BookingToolIframe.initialize({
+                "url": "https://login.smoobu.com/fr/booking-tool/iframe/${hosteId}/${appartement.smoobuId}", 
+                "baseUrl": "https://login.smoobu.com", 
+                "target": "#${divId}"
+              })
+            </script>
+          `
+        }} />
+      </div>
+    );
+  };
+
+  // Ajouter un script externe dans le DOM
+  useEffect(() => {
+    if (showSmoobuBooking && appartement) {
+      // Log détaillé pour le debug
+      console.log("Tentative d'initialisation du widget Smoobu:", {
+        smoobuId: appartement.smoobuId,
+        slug: appartement.slug,
+        titre: appartement.titre
+      });
+      
+      const script = document.createElement('script');
+      script.src = 'https://login.smoobu.com/js/Settings/BookingToolIframe.js';
+      script.async = true;
+      document.body.appendChild(script);
+      
+      script.onload = () => {
+        // Une fois le script chargé, initialiser le widget
+        const divId = `apartmentIframe${appartement.smoobuId}`;
+        // Utiliser l'ID d'hôte stocké dans l'appartement ou l'ID par défaut
+        const hosteId = appartement.smoobuHosteId || '1134658';
+        
+        console.log(`Initialisation avec hosteId: ${hosteId} et appartementId: ${appartement.smoobuId}`);
+        
+        if (window.BookingToolIframe && document.getElementById(divId)) {
+          window.BookingToolIframe.initialize({
+            "url": `https://login.smoobu.com/fr/booking-tool/iframe/${hosteId}/${appartement.smoobuId}`, 
+            "baseUrl": "https://login.smoobu.com", 
+            "target": `#${divId}`
+          });
+        } else {
+          console.error("Échec d'initialisation - BookingToolIframe ou divId non trouvé");
+        }
+      };
+      
+      return () => {
+        document.body.removeChild(script);
+      };
+    }
+  }, [showSmoobuBooking, appartement]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {appartement ? (
@@ -140,14 +251,38 @@ const AppartementDetails = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <img 
-                src={Array.isArray(parseJSON(appartement.images)) && parseJSON(appartement.images).length > 0
-                  ? parseJSON(appartement.images)[0]
-                  : "https://via.placeholder.com/600x400?text=Aucune+image+disponible"}
-                alt={appartement.titre}
-                className="w-full h-96 object-cover rounded-xl"
-              />
-              
+              {/* Image principale */}
+              <div className="relative bg-gray-100 rounded-xl overflow-hidden">
+                <img 
+                  src={getImages(appartement.images)[0] || 'https://via.placeholder.com/300x200?text=Image+non+disponible'}
+                  alt={appartement.titre}
+                  className="w-full h-96 object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://via.placeholder.com/300x200?text=Image+non+disponible';
+                  }}
+                />
+              </div>
+
+              {/* Galerie d'images miniatures */}
+              {getImages(appartement.images).length > 1 && (
+                <div className="grid grid-cols-4 gap-2 mt-2">
+                  {getImages(appartement.images).slice(1, 5).map((img, index) => (
+                    <div key={index} className="relative bg-gray-100 rounded-lg overflow-hidden aspect-square">
+                      <img
+                        src={img}
+                        alt={`${appartement.titre} - ${index + 2}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://via.placeholder.com/300x200?text=Image+non+disponible';
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="mt-8">
                 <h2 className="text-2xl font-semibold mb-4">
                   Logement proposé par l'administrateur
@@ -228,34 +363,25 @@ const AppartementDetails = () => {
                 </div>
               </div>
 
-              <div className="flex justify-center mb-4">
-                <Calendar
-                  onChange={handleDateChange}
-                  value={selectedDates}
-                  minDate={new Date()}
-                  tileDisabled={isDateDisabled}
-                  selectRange={true}
-                  className="rounded-lg border-none"
-                />
+              <div className="mt-6 mb-4">
+                <button
+                  onClick={() => setShowSmoobuBooking(!showSmoobuBooking)}
+                  className="bg-rose-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-rose-700 transition-colors w-full"
+                >
+                  {showSmoobuBooking ? "Masquer" : "Réserver maintenant"}
+                </button>
               </div>
-
-              {selectedDates && selectedDates[0] && selectedDates[1] && (
-                <div className="mb-4">
-                  <p className="text-gray-600">
-                    {formatDateRange(selectedDates)}
-                  </p>
-                  <p className="text-lg font-semibold mt-2">
-                    Total: {totalPrice}€
-                  </p>
+              
+              {showSmoobuBooking && (
+                <div className="mt-4 bg-white p-4 rounded-lg shadow-md">
+                  <h3 className="text-lg font-semibold mb-4">Réservation via Smoobu</h3>
+                  <div id={`apartmentIframe${appartement.smoobuId}`} className="w-full min-h-[500px]">
+                    <div className="flex justify-center items-center h-20">
+                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-600"></div>
+                    </div>
+                  </div>
                 </div>
               )}
-
-              <button
-                onClick={handleReservation}
-                className="w-full bg-rose-500 text-white py-3 rounded-lg hover:bg-rose-600 transition-colors"
-              >
-                Réserver
-              </button>
             </div>
           </div>
         </>
