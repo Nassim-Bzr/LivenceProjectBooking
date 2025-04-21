@@ -340,15 +340,6 @@ const Messagerie = () => {
     
     console.log("Tentative d'envoi de message à", selectedContact.id);
 
-    // Si c'est le support par défaut, chercher un admin
-    let receiverId = selectedContact.id;
-    if (receiverId === "support") {
-      // Dans un vrai système, on pourrait avoir une API pour trouver un admin disponible
-      // Ici, on utilise un ID d'admin par défaut (à ajuster selon votre base de données)
-      receiverId = 1; // ID de l'admin par défaut
-      console.log("Contact support, utilisation de l'ID admin par défaut:", receiverId);
-    }
-
     // Préparer l'en-tête d'autorisation
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
@@ -357,7 +348,7 @@ const Messagerie = () => {
     const tempMessage = {
       id: `temp-${new Date().getTime()}`,
       senderId: user.id,
-      receiverId: parseInt(receiverId, 10),
+      receiverId: selectedContact.id === "support" ? "admin" : parseInt(selectedContact.id, 10),
       contenu: newMessage,
       type: messageType,
       appartementId: messageType === "appartement" ? parseInt(selectedAppartement, 10) : null,
@@ -372,81 +363,109 @@ const Messagerie = () => {
     setNewMessage("");
     
     try {
-      const messageData = {
-        receiverId: parseInt(receiverId, 10),
-        contenu: newMessage,
-        type: messageType
-      };
-
-      // Ajouter l'ID d'appartement si nécessaire
-      if (messageType === "appartement" && selectedAppartement) {
-        messageData.appartementId = parseInt(selectedAppartement, 10);
-      }
-
-      console.log("Données du message à envoyer:", messageData);
+      let response;
       
-      const response = await axios.post("http://localhost:5000/api/messages/envoyer", messageData, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeader
-        }
-      });
-
-      console.log("Message envoyé avec succès:", response.data);
-      
-      // Récupérer le message confirmé
-      const sentMessage = response.data;
-      
-      // Remplacer le message temporaire par le message confirmé
-      setMessages(prevMessages => 
-        prevMessages.map(msg => 
-          msg.id === tempMessage.id 
-            ? {
-                ...sentMessage,
-                senderId: user.id,
-                receiverId: parseInt(receiverId, 10),
-                contenu: newMessage
-              }
-            : msg
-        )
-      );
-      
-      // Si c'est le premier message avec le support, créer une vraie conversation
-      if (selectedContact.isDefault && selectedContact.id === "support") {
-        console.log("Premier message au support, création d'une vraie conversation");
+      // Si c'est le support (première conversation avec l'admin)
+      if (selectedContact.id === "support") {
+        console.log("Envoi de message au support via la route spéciale");
         
-        // Trouver l'ID réel du destinataire admin depuis la réponse
-        const realAdminId = response.data.receiverId;
-        
-        // Créer un nouveau contact réel (non-default)
-        const newRealContact = {
-          id: realAdminId,
-          nom: "Support Livence",
-          role: "admin",
-          isDefault: false
+        const messageData = {
+          contenu: newMessage,
+          type: "support"
         };
         
-        // Remplacer le contact temporaire par le contact réel
-        setContacts(prevContacts => 
-          prevContacts.map(c => c.id === "support" ? newRealContact : c)
-        );
+        // Ajouter l'ID d'appartement si nécessaire
+        if (selectedAppartement) {
+          messageData.appartementId = parseInt(selectedAppartement, 10);
+        }
         
-        // Sélectionner le nouveau contact
-        setSelectedContact(newRealContact);
+        // Utiliser la route spéciale pour contacter le support
+        response = await axios.post("http://localhost:5000/api/messages/contacter-support", messageData, {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeader
+          }
+        });
+        
+        console.log("Message envoyé au support avec succès:", response.data);
+        
+        // Récupérer les informations de l'admin
+        const { adminId, adminName } = response.data.supportInfo || { adminId: null, adminName: "Support Livence" };
+        
+        if (adminId) {
+          // Créer un nouveau contact réel pour l'admin
+          const adminContact = {
+            id: adminId,
+            nom: adminName || "Support Livence",
+            role: "admin",
+            isDefault: false
+          };
+          
+          // Remplacer le contact temporaire par le contact réel
+          setContacts(prevContacts => 
+            prevContacts.map(c => c.id === "support" ? adminContact : c)
+          );
+          
+          // Mettre à jour le contact sélectionné
+          setSelectedContact(adminContact);
+          
+          // Recharger les messages pour la nouvelle conversation avec l'admin réel
+          fetchMessages(adminId);
+        }
+      } else {
+        // Message normal à un utilisateur spécifique
+        const messageData = {
+          receiverId: parseInt(selectedContact.id, 10),
+          contenu: newMessage,
+          type: messageType
+        };
+
+        // Ajouter l'ID d'appartement si nécessaire
+        if (messageType === "appartement" && selectedAppartement) {
+          messageData.appartementId = parseInt(selectedAppartement, 10);
+        }
+
+        console.log("Données du message à envoyer:", messageData);
+        
+        response = await axios.post("http://localhost:5000/api/messages/envoyer", messageData, {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeader
+          }
+        });
+
+        console.log("Message envoyé avec succès:", response.data);
+        
+        // Récupérer le message confirmé
+        const sentMessage = response.data;
+        
+        // Remplacer le message temporaire par le message confirmé
+        setMessages(prevMessages => 
+          prevMessages.map(msg => 
+            msg.id === tempMessage.id 
+              ? {
+                  ...sentMessage,
+                  senderId: user.id,
+                  receiverId: parseInt(selectedContact.id, 10),
+                  contenu: newMessage
+                }
+              : msg
+          )
+        );
       }
 
-      // Notifier via socket.io
-      if (socket) {
+      // Notifier via socket.io si ce n'est pas un nouveau contact support
+      if (socket && !selectedContact.isDefault) {
         console.log("Notification socket pour le message envoyé");
         socket.emit("send_message", {
-          id: sentMessage.id,
           senderId: user.id,
-          receiverId: parseInt(receiverId, 10),
+          receiverId: parseInt(selectedContact.id, 10),
           contenu: newMessage,
           type: messageType,
           appartementId: messageType === "appartement" ? parseInt(selectedAppartement, 10) : null,
-          createdAt: sentMessage.createdAt
+          createdAt: new Date().toISOString()
         });
       }
     } catch (err) {
@@ -467,22 +486,63 @@ const Messagerie = () => {
   };
 
   // Créer une nouvelle conversation de support
-  const startSupportConversation = () => {
-    const supportContact = {
-      id: "support",
-      nom: "Support Livence",
-      role: "admin",
-      isDefault: true
-    };
+  const startSupportConversation = async () => {
+    // Préparer l'en-tête d'autorisation
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
     
-    // Vérifier si ce contact existe déjà
-    if (!contacts.find(c => c.id === "support")) {
-      setContacts(prevContacts => [supportContact, ...prevContacts]);
+    // Vérifier d'abord s'il y a déjà un admin dans les contacts
+    try {
+      // Chercher un admin parmi les contacts existants
+      const adminContact = contacts.find(contact => contact.role === "admin" && !contact.isDefault);
+      
+      if (adminContact) {
+        console.log("Contact admin existant trouvé:", adminContact);
+        setSelectedContact(adminContact);
+        setMessages([]);
+        setMessageType("support");
+        fetchMessages(adminContact.id);
+        return;
+      }
+      
+      // Si aucun admin existant, commencer une nouvelle conversation avec le support
+      console.log("Aucun contact admin existant, création d'une nouvelle conversation de support");
+      const supportContact = {
+        id: "support",
+        nom: "Support Livence",
+        role: "admin",
+        isDefault: true
+      };
+      
+      // Vérifier si ce contact existe déjà
+      if (!contacts.find(c => c.id === "support")) {
+        setContacts(prevContacts => [supportContact, ...prevContacts]);
+      }
+      
+      setSelectedContact(supportContact);
+      setMessages([]);
+      setMessageType("support");
+    } catch (error) {
+      console.error("Erreur lors de la recherche d'un admin:", error);
+      
+      // En cas d'erreur, créer quand même un contact support par défaut
+      const supportContact = {
+        id: "support",
+        nom: "Support Livence",
+        role: "admin",
+        isDefault: true
+      };
+      
+      setContacts(prevContacts => 
+        prevContacts.find(c => c.id === "support") 
+          ? prevContacts 
+          : [supportContact, ...prevContacts]
+      );
+      
+      setSelectedContact(supportContact);
+      setMessages([]);
+      setMessageType("support");
     }
-    
-    setSelectedContact(supportContact);
-    setMessages([]);
-    setMessageType("support");
   };
 
   // Fonction pour marquer un seul message comme lu

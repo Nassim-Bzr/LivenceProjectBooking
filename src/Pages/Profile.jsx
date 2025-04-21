@@ -24,12 +24,13 @@ const Profile = () => {
 
   useEffect(() => {
     if (user) {
+      console.log("Données utilisateur dans Profile:", user);
       setFormData({
         name: user.name || "",
         email: user.email || "",
         phone: user.phone || "",
         bio: user.bio || "",
-        avatar: user.avatar || "",
+        avatar: user.photo || "",
         billingAddress: user.billingAddress || "",
         city: user.city || "",
         postalCode: user.postalCode || "",
@@ -38,7 +39,13 @@ const Profile = () => {
   
       const fetchReservations = async () => {
         try {
-          const response = await axios.get("http://localhost:5000/reservations/user", { withCredentials: true });
+          const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+          
+          const response = await axios.get("http://localhost:5000/api/reservations/user", { 
+            withCredentials: true,
+            headers
+          });
           setReservations(response.data);
         } catch (error) {
           console.error("❌ Erreur récupération réservations:", error);
@@ -115,7 +122,7 @@ const Profile = () => {
               <div className="relative w-40 h-40 mx-auto mb-6">
                 <div className="w-full h-full rounded-full overflow-hidden ring-4 ring-blue-100">
                   <img 
-                    src={formData.avatar ? formData.avatar : "https://via.placeholder.com/150"} 
+                    src={user?.photo || formData.avatar || "https://via.placeholder.com/150"} 
                     alt="Photo de profil" 
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -134,8 +141,8 @@ const Profile = () => {
                   />
                 </label>
               </div>
-              <h2 className="text-2xl font-bold text-gray-800">{user?.name}</h2>
-              <p className="text-gray-600">{user?.email}</p>
+              <h2 className="text-2xl font-bold text-gray-800">{user?.name || "Utilisateur"}</h2>
+              <p className="text-gray-600">{user?.email || "Email non disponible"}</p>
             </div>
             
             <div className="space-y-3">

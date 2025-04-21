@@ -1,15 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../Context/AuthContext";
+import { useFirebase } from "../Context/FirebaseContext";
 import { useNavigate, Link } from "react-router-dom";
+import { getAuth, signOut } from "firebase/auth";
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
+  const { signInWithGoogle } = useFirebase();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Si l'utilisateur est déjà connecté, rediriger vers la page d'accueil
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  // Au chargement de la page de login, nous nous assurons qu'aucune session Firebase n'est active
+  useEffect(() => {
+    const clearFirebaseSession = async () => {
+      try {
+        const auth = getAuth();
+        await signOut(auth);
+        console.log("Session Firebase supprimée pour permettre une nouvelle connexion");
+      } catch (e) {
+        console.error("Erreur lors de la déconnexion Firebase:", e);
+      }
+    };
+    
+    clearFirebaseSession();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,7 +46,50 @@ export default function Login() {
       navigate("/");
     } catch (error) {
       console.error("Erreur de connexion:", error);
-      setError("Les identifiants sont incorrects. Veuillez réessayer.");
+      
+      if (error.response) {
+        if (error.response.status === 401) {
+          setError("Email ou mot de passe incorrect. Veuillez réessayer.");
+        } else if (error.response.status === 500) {
+          setError("Erreur serveur. Veuillez réessayer plus tard.");
+        } else {
+          setError(error.response.data.message || "Une erreur est survenue lors de la connexion.");
+        }
+      } else if (error.request) {
+        setError("Impossible de contacter le serveur. Vérifiez votre connexion internet.");
+      } else {
+        setError("Une erreur est survenue lors de la préparation de la requête.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      
+      // On tente une déconnexion Firebase avant la connexion pour éviter les problèmes de session
+      try {
+        const auth = getAuth();
+        await signOut(auth);
+      } catch (e) {
+        console.error("Erreur lors de la déconnexion Firebase préalable:", e);
+      }
+      
+      // Maintenant on peut procéder à la connexion Google
+      await signInWithGoogle();
+      
+      // La redirection est gérée par le FirebaseContext
+    } catch (error) {
+      console.error("Erreur de connexion avec Google:", error);
+      
+      if (error.response) {
+        setError(error.response.data.message || "Problème lors de la connexion avec Google.");
+      } else {
+        setError("Problème lors de la connexion avec Google. Veuillez réessayer.");
+      }
     } finally {
       setLoading(false);
     }
@@ -127,19 +195,31 @@ export default function Login() {
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <button className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-              <span className="sr-only">Sign in with Google</span>
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/>
+          <div className="mt-6 grid grid-cols-1 gap-3">
+            <button 
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                <path 
+                  fill="#EA4335" 
+                  d="M12.0003 4.75C13.7703 4.75 15.3553 5.36002 16.6053 6.54998L20.0303 3.125C17.9502 1.19 15.2353 0 12.0003 0C7.31028 0 3.25527 2.69 1.28027 6.60998L5.27028 9.70498C6.21525 6.86002 8.87028 4.75 12.0003 4.75Z"
+                />
+                <path 
+                  fill="#34A853" 
+                  d="M23.49 12.275C23.49 11.49 23.4101 10.73 23.27 10H12V14.51H18.47C18.18 15.99 17.34 17.25 16.08 18.1L19.945 21.1C22.2 19.01 23.49 15.92 23.49 12.275Z"
+                />
+                <path 
+                  fill="#FBBC05" 
+                  d="M5.26498 14.2949C5.02498 13.5699 4.88501 12.7999 4.88501 11.9999C4.88501 11.1999 5.01998 10.4299 5.26498 9.7049L1.275 6.60986C0.46 8.22986 0 10.0599 0 11.9999C0 13.9399 0.46 15.7699 1.28 17.3899L5.26498 14.2949Z"
+                />
+                <path 
+                  fill="#4285F4" 
+                  d="M12.0004 24.0001C15.2404 24.0001 17.9654 22.935 19.9454 21.095L16.0804 18.095C15.0054 18.82 13.6204 19.245 12.0004 19.245C8.8704 19.245 6.21537 17.135 5.2654 14.29L1.27539 17.385C3.25539 21.31 7.3104 24.0001 12.0004 24.0001Z"
+                />
               </svg>
-            </button>
-
-            <button className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-              <span className="sr-only">Sign in with Facebook</span>
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-              </svg>
+              Se connecter avec Google
             </button>
           </div>
         </div>

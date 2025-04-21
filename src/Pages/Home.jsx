@@ -22,6 +22,7 @@ export default function Home() {
   const [bedroomCount, setBedroomCount] = useState(0);
   const [bathroomCount, setBathroomCount] = useState(0);
   
+  console.log(user);
   // Liste des commodités disponibles
   const amenities = [
     { id: "wifi", label: "Wifi", icon: <FaWifi /> },
@@ -48,7 +49,19 @@ export default function Home() {
       }
       
       const data = await response.json();
-      console.log("Appartements récupérés:", data);
+      console.log("✅ Appartements récupérés:", data);
+      console.log("🔢 Nombre d'appartements récupérés:", data.length);
+      
+      if (data.length > 0) {
+        console.log("📝 Détails du premier appartement:", {
+          id: data[0].id,
+          titre: data[0].titre,
+          localisation: data[0].localisation,
+          prix: data[0].prixParNuit,
+          capacite: data[0].capacite
+        });
+      }
+      
       setAppartements(data);
       setFilteredAppartements(data);
     } catch (error) {
@@ -57,6 +70,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+    
   }, []);
 
   // Forcer le rafraîchissement des données
@@ -139,6 +153,7 @@ export default function Home() {
   useEffect(() => {
     const applyFilters = () => {
       let result = [...appartements];
+      console.log("🔍 Début du filtrage - Nombre initial:", result.length);
       
       // Filtre par recherche textuelle (titre ou emplacement)
       if (searchTerm.trim() !== "") {
@@ -146,18 +161,22 @@ export default function Home() {
           apt.titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
           apt.localisation.toLowerCase().includes(searchTerm.toLowerCase())
         );
+        console.log(`🔍 Après filtrage par terme "${searchTerm}":`, result.length);
       }
       
       // Filtre par fourchette de prix
       result = result.filter(apt => 
         apt.prixParNuit >= priceRange[0] && apt.prixParNuit <= priceRange[1]
       );
+      console.log(`💰 Après filtrage par prix (${priceRange[0]}-${priceRange[1]}€):`, result.length);
       
       // Filtre par commodités
       if (selectedAmenities.length > 0) {
+        console.log("🛋️ Commodités sélectionnées:", selectedAmenities);
         result = result.filter(apt => {
           try {
             const inclus = parseJSON(apt.inclus);
+            console.log(`🛋️ Inclus pour ${apt.titre}:`, inclus);
             return selectedAmenities.every(amenity => 
               Array.isArray(inclus) && inclus.includes(amenity)
             );
@@ -166,26 +185,34 @@ export default function Home() {
             return false;
           }
         });
+        console.log("🛋️ Après filtrage par commodités:", result.length);
       }
       
       // Filtre par emplacement
       if (selectedLocations.length > 0) {
+        console.log("📍 Emplacements sélectionnés:", selectedLocations);
         result = result.filter(apt => 
           selectedLocations.includes(apt.localisation)
         );
+        console.log("📍 Après filtrage par emplacement:", result.length);
       }
       
       // Filtre par nombre de voyageurs
-      result = result.filter(apt => {
-        try {
-          const capacite = parseJSON(apt.capacite);
-          return typeof capacite === 'object' && capacite !== null && 
-                 typeof capacite.voyageurs === 'number' && capacite.voyageurs >= guestCount;
-        } catch (error) {
-          console.error("Erreur lors du filtrage des voyageurs:", error);
-          return false;
-        }
-      });
+      if (guestCount > 1) {
+        console.log("👥 Nombre de voyageurs requis:", guestCount);
+        result = result.filter(apt => {
+          try {
+            const capacite = parseJSON(apt.capacite);
+            console.log(`👥 Capacité pour ${apt.titre}:`, capacite);
+            return typeof capacite === 'object' && capacite !== null && 
+                  typeof capacite.voyageurs === 'number' && capacite.voyageurs >= guestCount;
+          } catch (error) {
+            console.error("Erreur lors du filtrage des voyageurs:", error);
+            return false;
+          }
+        });
+        console.log("👥 Après filtrage par nombre de voyageurs:", result.length);
+      }
       
       // Filtre par nombre de chambres
       if (bedroomCount > 0) {
@@ -193,12 +220,13 @@ export default function Home() {
           try {
             const capacite = parseJSON(apt.capacite);
             return typeof capacite === 'object' && capacite !== null && 
-                   typeof capacite.chambres === 'number' && capacite.chambres >= bedroomCount;
+                  typeof capacite.chambres === 'number' && capacite.chambres >= bedroomCount;
           } catch (error) {
             console.error("Erreur lors du filtrage des chambres:", error);
             return false;
           }
         });
+        console.log("🛏️ Après filtrage par nombre de chambres:", result.length);
       }
       
       // Filtre par nombre de salles de bain
@@ -207,13 +235,15 @@ export default function Home() {
           try {
             const capacite = parseJSON(apt.capacite);
             return typeof capacite === 'object' && capacite.sallesDeBain >= bathroomCount;
-      } catch (error) {
+          } catch (error) {
             console.error("Erreur lors du filtrage des salles de bain:", error);
             return false;
           }
         });
+        console.log("🚿 Après filtrage par nombre de salles de bain:", result.length);
       }
       
+      console.log("✅ Résultat final du filtrage:", result.length);
       setFilteredAppartements(result);
     };
     

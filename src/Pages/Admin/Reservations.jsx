@@ -29,41 +29,36 @@ const AdminReservations = () => {
   useEffect(() => {
     const fetchReservations = async () => {
       setLoading(true);
+      setError(null); // Réinitialiser les erreurs
       try {
         // Utiliser l'URL correcte pour récupérer toutes les réservations en tant qu'admin
         const response = await axios.get(
-          "http://localhost:5000/reservations/all",
+          "http://localhost:5000/api/reservations/all", // Ajouter prefix /api
           { withCredentials: true }
         );
         
         console.log("Réservations chargées:", response.data.length);
         // Debug: Afficher la structure complète des données de réservation
-        console.log("Structure d'une réservation:", response.data[0]);
-        console.log("Utilisateur associé:", response.data[0]?.user);
-        console.log("ID utilisateur:", response.data[0]?.user?.id);
-        console.log("Tous les IDs utilisateurs:", response.data.map(r => r.user?.id));
+        if (response.data.length > 0) {
+          console.log("Structure d'une réservation:", response.data[0]);
+          console.log("Utilisateur associé:", response.data[0]?.user);
+          console.log("ID utilisateur:", response.data[0]?.user?.id);
+          console.log("Tous les IDs utilisateurs:", response.data.map(r => r.user?.id));
+        }
         
         // Les données sont directement dans la réponse
         setReservations(response.data);
         setTotalPages(1); // Si la pagination n'est pas implémentée côté serveur
-        
-        // Pas besoin de récupérer les appartements séparément car ils sont inclus dans la réponse
       } catch (err) {
         console.error("Erreur lors du chargement des réservations:", err);
         
-        // Si l'endpoint /reservations/all n'existe pas encore, fallback sur /reservations/user
-        try {
-          console.log("Tentative de récupération avec l'endpoint de fallback...");
-          const fallbackResponse = await axios.get(
-            "http://localhost:5000/reservations/user",
-            { withCredentials: true }
-          );
-          
-          console.log("Réservations récupérées via fallback:", fallbackResponse.data.length);
-          setReservations(fallbackResponse.data);
-        } catch (fallbackErr) {
-          console.error("Erreur lors du chargement des réservations (fallback):", fallbackErr);
-          setError("Impossible de charger les réservations");
+        // Vérifier si l'erreur est liée à l'authentification (401/403)
+        if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+          setError("Vous n'êtes pas autorisé à accéder à ces données. Veuillez vous reconnecter.");
+          // Rediriger vers la page de connexion après 2 secondes
+          setTimeout(() => navigate("/login"), 2000);
+        } else {
+          setError("Impossible de charger les réservations. Le serveur est-il en cours d'exécution?");
         }
       } finally {
         setLoading(false);
@@ -71,7 +66,7 @@ const AdminReservations = () => {
     };
 
     fetchReservations();
-  }, [statusFilter, searchTerm]); // Retirer page car nous n'utilisons pas de pagination côté serveur
+  }, [statusFilter, searchTerm, navigate]); // Ajouter navigate comme dépendance
 
   // Fonction pour mettre à jour le statut d'une réservation
   const updateReservationStatus = async (reservationId, newStatus) => {
@@ -152,7 +147,7 @@ const AdminReservations = () => {
     try {
       // Utiliser le même endpoint que lors du chargement initial
       const response = await axios.get(
-        "http://localhost:5000/reservations/all",
+        "http://localhost:5000/api/reservations/all", // Ajouter prefix /api
         { withCredentials: true }
       );
       
@@ -161,19 +156,13 @@ const AdminReservations = () => {
     } catch (err) {
       console.error("Erreur lors du rafraîchissement des réservations:", err);
       
-      // Si l'endpoint /reservations/all n'existe pas encore, fallback sur /reservations/user
-      try {
-        console.log("Tentative de rafraîchissement avec l'endpoint de fallback...");
-        const fallbackResponse = await axios.get(
-          "http://localhost:5000/reservations/user",
-          { withCredentials: true }
-        );
-        
-        console.log("Réservations rafraîchies via fallback:", fallbackResponse.data.length);
-        setReservations(fallbackResponse.data);
-      } catch (fallbackErr) {
-        console.error("Erreur lors du rafraîchissement des réservations (fallback):", fallbackErr);
-        setError("Impossible de rafraîchir les réservations");
+      // Vérifier si l'erreur est liée à l'authentification
+      if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+        setError("Vous n'êtes pas autorisé à accéder à ces données. Veuillez vous reconnecter.");
+        // Rediriger vers la page de connexion après 2 secondes
+        setTimeout(() => navigate("/login"), 2000);
+      } else {
+        setError("Impossible de rafraîchir les réservations. Le serveur est-il en cours d'exécution?");
       }
     } finally {
       setIsRefreshing(false);
