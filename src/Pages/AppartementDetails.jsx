@@ -3,7 +3,7 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import axios from "axios";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { FaStar, FaParking, FaWifi, FaBath, FaBed, FaUser, FaChevronRight, FaImage } from "react-icons/fa";
+import { FaStar, FaParking, FaWifi, FaBath, FaBed, FaUser, FaChevronRight, FaImage, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { useAuth } from "../Context/AuthContext";
 
 const AppartementDetails = () => {
@@ -16,8 +16,11 @@ const AppartementDetails = () => {
   const [totalPrice, setTotalPrice] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [imageError, setImageError] = useState(false);
   const [showSmoobuBooking, setShowSmoobuBooking] = useState(false);
+  const [showDirectBooking, setShowDirectBooking] = useState(false);
+  const [guestsCount, setGuestsCount] = useState(1);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -125,30 +128,78 @@ const AppartementDetails = () => {
     return `du ${startDate} au ${endDate}`;
   };
 
-  const handleReservation = () => {
+  // Fonction pour réserver directement sur notre plateforme
+  const handleDirectReservation = async () => {
     if (!user) {
-      navigate("/login");
+      navigate("/login", { 
+        state: { 
+          redirectUrl: `/appartement/${slug}`,
+          message: "Connectez-vous pour effectuer votre réservation" 
+        } 
+      });
       return;
     }
   
     if (!selectedDates || !selectedDates[0] || !selectedDates[1]) {
-      setError("Veuillez sélectionner des dates");
+      setError("Veuillez sélectionner des dates pour votre séjour");
       return;
     }
+
+    setLoading(true);
+    setError(null);
     
-    // Création de l'objet avec les détails de la réservation
-    const reservationDetails = {
-      appartementId: appartement.id,
-      startDate: selectedDates[0],
-      endDate: selectedDates[1],
-      totalPrice: totalPrice,
-      guestsCount: 1 // Valeur par défaut pour le nombre de voyageurs
-    };
-    
-    // Redirection vers la page de checkout avec les détails de la réservation
-    navigate(`/appartement/${slug}/checkout`, { 
-      state: { reservationDetails } 
-    });
+    try {
+      // Créer l'objet réservation
+      const reservationData = {
+        appartementId: appartement.id,
+        startDate: selectedDates[0].toISOString().split('T')[0],
+        endDate: selectedDates[1].toISOString().split('T')[0],
+        totalPrice: totalPrice,
+        guestsCount: guestsCount
+      };
+      
+      console.log("Données de réservation:", reservationData);
+      
+      // Envoyer la demande de réservation
+      const response = await axios.post(
+        "http://localhost:5000/api/reservations",
+        reservationData,
+        { 
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      console.log("Réponse de réservation:", response.data);
+      
+      // Afficher un message de succès
+      setSuccessMessage("Votre réservation a été effectuée avec succès !");
+      
+      // Réinitialiser le formulaire
+      setSelectedDates(null);
+      
+      // Rediriger vers la page de confirmation
+      setTimeout(() => {
+        navigate("/profile", { 
+          state: { 
+            message: "Votre réservation a été enregistrée avec succès",
+            reservationId: response.data.reservation.id
+          } 
+        });
+      }, 2000);
+      
+    } catch (err) {
+      console.error("Erreur lors de la réservation:", err);
+      if (err.response && err.response.data) {
+        setError(err.response.data.message || "Erreur lors de la réservation");
+      } else {
+        setError("Erreur de connexion au serveur");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Fonction pour afficher les étoiles
@@ -234,6 +285,21 @@ const AppartementDetails = () => {
       {appartement ? (
         <>
           <h1 className="text-3xl font-bold mb-4">{appartement.titre}</h1>
+          
+          {/* Afficher les messages de succès/erreur */}
+          {successMessage && (
+            <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded flex items-center">
+              <FaCheckCircle className="mr-2" />
+              {successMessage}
+            </div>
+          )}
+          
+          {error && (
+            <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded flex items-center">
+              <FaTimesCircle className="mr-2" />
+              {typeof error === 'object' && error.message ? error.message : error}
+            </div>
+          )}
           
           <div className="flex items-center gap-4 mb-6">
             <Link to={`/appartement/${slug}/avis`} className="flex items-center hover:text-blue-600 transition-colors">
@@ -363,15 +429,97 @@ const AppartementDetails = () => {
                 </div>
               </div>
 
-              <div className="mt-6 mb-4">
+              {/* Boutons de réservation */}
+              <div className="mt-6 mb-4 flex flex-col gap-3">
                 <button
-                  onClick={() => setShowSmoobuBooking(!showSmoobuBooking)}
+                  onClick={() => {
+                    setShowDirectBooking(!showDirectBooking);
+                    if (showSmoobuBooking) setShowSmoobuBooking(false);
+                  }}
                   className="bg-rose-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-rose-700 transition-colors w-full"
                 >
-                  {showSmoobuBooking ? "Masquer" : "Réserver maintenant"}
+                  {showDirectBooking ? "Masquer" : "Réserver sur notre site"}
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowSmoobuBooking(!showSmoobuBooking);
+                    if (showDirectBooking) setShowDirectBooking(false);
+                  }}
+                  className="bg-white border border-rose-600 text-rose-600 py-3 px-6 rounded-lg font-medium hover:bg-rose-50 transition-colors w-full"
+                >
+                  {showSmoobuBooking ? "Masquer" : "Réserver via Smoobu"}
                 </button>
               </div>
               
+              {/* Interface de réservation directe */}
+              {showDirectBooking && (
+                <div className="mt-4 p-4 border rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4">Réserver directement</h3>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Dates de séjour
+                    </label>
+                    <Calendar
+                      onChange={handleDateChange}
+                      value={selectedDates}
+                      selectRange={true}
+                      minDate={new Date()}
+                      tileDisabled={({ date }) => isDateDisabled(date)}
+                      className="w-full rounded border"
+                    />
+                  </div>
+                  
+                  {selectedDates && selectedDates[0] && selectedDates[1] && (
+                    <div className="my-4 p-3 bg-gray-50 rounded-lg">
+                      <p className="font-medium">Séjour {formatDateRange(selectedDates)}</p>
+                      <p className="text-gray-600">
+                        {Math.ceil((selectedDates[1] - selectedDates[0]) / (1000 * 60 * 60 * 24))} nuits
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nombre de voyageurs
+                    </label>
+                    <select
+                      value={guestsCount}
+                      onChange={(e) => setGuestsCount(Number(e.target.value))}
+                      className="w-full p-2 border rounded-lg"
+                    >
+                      {[...Array(getCapaciteValue('voyageurs', 4))].map((_, idx) => (
+                        <option key={idx + 1} value={idx + 1}>
+                          {idx + 1} voyageur{idx > 0 ? 's' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {selectedDates && selectedDates[0] && selectedDates[1] && (
+                    <div className="border-t pt-4 mt-4">
+                      <div className="flex justify-between mb-2">
+                        <span>Prix total</span>
+                        <span className="font-bold">{totalPrice}€</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <button
+                    onClick={handleDirectReservation}
+                    disabled={loading || !selectedDates || !selectedDates[0] || !selectedDates[1]}
+                    className="w-full mt-4 py-3 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex justify-center items-center"
+                  >
+                    {loading ? (
+                      <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                    ) : null}
+                    {loading ? "Réservation en cours..." : "Réserver maintenant"}
+                  </button>
+                </div>
+              )}
+              
+              {/* Interface de réservation Smoobu */}
               {showSmoobuBooking && (
                 <div className="mt-4 bg-white p-4 rounded-lg shadow-md">
                   <h3 className="text-lg font-semibold mb-4">Réservation via Smoobu</h3>

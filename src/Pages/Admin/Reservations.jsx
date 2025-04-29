@@ -29,36 +29,41 @@ const AdminReservations = () => {
   useEffect(() => {
     const fetchReservations = async () => {
       setLoading(true);
-      setError(null); // Réinitialiser les erreurs
       try {
         // Utiliser l'URL correcte pour récupérer toutes les réservations en tant qu'admin
         const response = await axios.get(
-          "http://localhost:5000/api/reservations/all", // Ajouter prefix /api
+          "http://localhost:5000/api/reservations/all",
           { withCredentials: true }
         );
         
         console.log("Réservations chargées:", response.data.length);
         // Debug: Afficher la structure complète des données de réservation
-        if (response.data.length > 0) {
-          console.log("Structure d'une réservation:", response.data[0]);
-          console.log("Utilisateur associé:", response.data[0]?.user);
-          console.log("ID utilisateur:", response.data[0]?.user?.id);
-          console.log("Tous les IDs utilisateurs:", response.data.map(r => r.user?.id));
-        }
+        console.log("Structure d'une réservation:", response.data[0]);
+        console.log("Utilisateur associé:", response.data[0]?.user);
+        console.log("ID utilisateur:", response.data[0]?.user?.id);
+        console.log("Tous les IDs utilisateurs:", response.data.map(r => r.user?.id));
         
         // Les données sont directement dans la réponse
         setReservations(response.data);
         setTotalPages(1); // Si la pagination n'est pas implémentée côté serveur
+        
+        // Pas besoin de récupérer les appartements séparément car ils sont inclus dans la réponse
       } catch (err) {
         console.error("Erreur lors du chargement des réservations:", err);
         
-        // Vérifier si l'erreur est liée à l'authentification (401/403)
-        if (err.response && (err.response.status === 401 || err.response.status === 403)) {
-          setError("Vous n'êtes pas autorisé à accéder à ces données. Veuillez vous reconnecter.");
-          // Rediriger vers la page de connexion après 2 secondes
-          setTimeout(() => navigate("/login"), 2000);
-        } else {
-          setError("Impossible de charger les réservations. Le serveur est-il en cours d'exécution?");
+        // Si l'endpoint /reservations/all n'existe pas encore, fallback sur /reservations/user
+        try {
+          console.log("Tentative de récupération avec l'endpoint de fallback...");
+          const fallbackResponse = await axios.get(
+            "http://localhost:5000/api/reservations/user",
+            { withCredentials: true }
+          );
+          
+          console.log("Réservations récupérées via fallback:", fallbackResponse.data.length);
+          setReservations(fallbackResponse.data);
+        } catch (fallbackErr) {
+          console.error("Erreur lors du chargement des réservations (fallback):", fallbackErr);
+          setError("Impossible de charger les réservations");
         }
       } finally {
         setLoading(false);
@@ -66,7 +71,7 @@ const AdminReservations = () => {
     };
 
     fetchReservations();
-  }, [statusFilter, searchTerm, navigate]); // Ajouter navigate comme dépendance
+  }, [statusFilter, searchTerm]); // Retirer page car nous n'utilisons pas de pagination côté serveur
 
   // Fonction pour mettre à jour le statut d'une réservation
   const updateReservationStatus = async (reservationId, newStatus) => {
@@ -81,7 +86,7 @@ const AdminReservations = () => {
       const requestData = { status: newStatus };
       
       const response = await axios.put(
-        `http://localhost:5000/reservations/${reservationId}/status`,
+        `http://localhost:5000/api/reservations/${reservationId}/status`,
         requestData,
         { 
           withCredentials: true,
@@ -127,7 +132,7 @@ const AdminReservations = () => {
     
     try {
       await axios.delete(
-        `http://localhost:5000/reservations/${reservationId}`,
+        `http://localhost:5000/api/reservations/${reservationId}`,
         { withCredentials: true }
       );
       
@@ -147,7 +152,7 @@ const AdminReservations = () => {
     try {
       // Utiliser le même endpoint que lors du chargement initial
       const response = await axios.get(
-        "http://localhost:5000/api/reservations/all", // Ajouter prefix /api
+        "http://localhost:5000/api/reservations/all",
         { withCredentials: true }
       );
       
@@ -156,13 +161,19 @@ const AdminReservations = () => {
     } catch (err) {
       console.error("Erreur lors du rafraîchissement des réservations:", err);
       
-      // Vérifier si l'erreur est liée à l'authentification
-      if (err.response && (err.response.status === 401 || err.response.status === 403)) {
-        setError("Vous n'êtes pas autorisé à accéder à ces données. Veuillez vous reconnecter.");
-        // Rediriger vers la page de connexion après 2 secondes
-        setTimeout(() => navigate("/login"), 2000);
-      } else {
-        setError("Impossible de rafraîchir les réservations. Le serveur est-il en cours d'exécution?");
+      // Si l'endpoint /reservations/all n'existe pas encore, fallback sur /reservations/user
+      try {
+        console.log("Tentative de rafraîchissement avec l'endpoint de fallback...");
+        const fallbackResponse = await axios.get(
+          "http://localhost:5000/api/reservations/user",
+          { withCredentials: true }
+        );
+        
+        console.log("Réservations rafraîchies via fallback:", fallbackResponse.data.length);
+        setReservations(fallbackResponse.data);
+      } catch (fallbackErr) {
+        console.error("Erreur lors du rafraîchissement des réservations (fallback):", fallbackErr);
+        setError("Impossible de rafraîchir les réservations");
       }
     } finally {
       setIsRefreshing(false);
@@ -366,6 +377,12 @@ const AdminReservations = () => {
                       <div className="text-sm text-gray-500">
                         Créée le {formatDate(reservation.createdAt)}
                       </div>
+                      <Link 
+                        to={`/reservation/${reservation.id}`}
+                        className="text-xs text-rose-600 hover:underline flex items-center mt-1"
+                      >
+                        Voir détails <FaExternalLinkAlt className="ml-1 text-xs" />
+                      </Link>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">
@@ -412,7 +429,7 @@ const AdminReservations = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
-                      {reservation.guestsCount}
+                      {reservation.guestsCount || "N/A"}
                     </td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
                       {reservation.totalPrice}€

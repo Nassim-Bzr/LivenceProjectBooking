@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../Context/AuthContext';
 import { FaChevronDown, FaSignOutAlt, FaEnvelope } from 'react-icons/fa';
 
+
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, logout } = useAuth();
@@ -45,10 +46,10 @@ export default function Navbar() {
     <header className='flex border-b border-gray-300 py-3 px-4 sm:px-10 bg-white min-h-[65px] tracking-wide relative z-50'>
       <div className='flex flex-wrap items-center gap-4 max-w-screen-xl mx-auto w-full'>
         <Link to="/" className="max-sm:hidden">
-          <img src="https://readymadeui.com/readymadeui.svg" alt="logo" className='w-[134px]' />
+          <img src="/logo2.png" alt="logo" className='w-[84px]' />
         </Link>
         <Link to="/" className="hidden max-sm:block">
-          <img src="https://readymadeui.com/readymadeui-short.svg" alt="logo" className='w-8' />
+        <img src="/logo2.png" alt="logo" className='w-[84px]' />
         </Link>
 
         <div id="collapseMenu"
@@ -84,10 +85,7 @@ export default function Navbar() {
             </li>
             {user ? (
               <>
-                <li className='max-lg:border-b max-lg:py-3 px-3'>
-                  <Link to="/profile"
-                    className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px]'>Mon Profil</Link>
-                </li>
+            
                 <li className='max-lg:border-b max-lg:py-3 px-3'>
                   <Link to="/messagerie"
                     className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px] flex items-center'>
@@ -155,7 +153,7 @@ export default function Navbar() {
               <Link to="/profile" className="flex items-center">
                 <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 mr-2 border border-gray-300">
                   <img 
-                    src={user.avatar || ""} 
+                    src={user.photo || ""} 
                     alt="Profile" 
                     className="w-full h-full object-cover"
                     onError={(e) => {

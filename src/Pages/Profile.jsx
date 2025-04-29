@@ -360,19 +360,58 @@ const Profile = () => {
               {reservations.length > 0 ? (
                 <div className="space-y-4">
                   {reservations.map((reservation) => (
-                    <div key={reservation._id} className="bg-white border rounded-lg p-6 hover:shadow-lg transition-shadow">
+                    <div key={reservation.id} className="bg-white border rounded-lg p-6 hover:shadow-lg transition-shadow">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-bold text-lg text-gray-800">{reservation.apartment?.title || "Appartement"}</h4>
+                          <h4 className="font-bold text-lg text-gray-800">
+                            {reservation.appartement?.titre || "Appartement"}
+                          </h4>
                           <p className="text-gray-600">
-                            {new Date(reservation.startDate).toLocaleDateString()} - {new Date(reservation.endDate).toLocaleDateString()}
+                            Du {new Date(reservation.startDate).toLocaleDateString('fr-FR')} au {new Date(reservation.endDate).toLocaleDateString('fr-FR')}
                           </p>
                           <p className="text-sm mt-2">
-                            Statut: <span className="font-medium px-3 py-1 bg-blue-100 text-blue-800 rounded-full">{reservation.status}</span>
+                            Statut: <span className={`font-medium px-3 py-1 rounded-full ${
+                              reservation.status === "confirmée" ? "bg-green-100 text-green-800" :
+                              reservation.status === "en attente" ? "bg-yellow-100 text-yellow-800" :
+                              reservation.status === "annulée" ? "bg-red-100 text-red-800" :
+                              "bg-blue-100 text-blue-800"
+                            }`}>
+                              {reservation.status}
+                            </span>
+                          </p>
+                          <p className="text-sm mt-2 text-gray-600">
+                            Adresse: {reservation.appartement?.localisation || "Non spécifiée"}
                           </p>
                         </div>
-                        <span className="text-2xl font-bold text-blue-600">{reservation.totalPrice} €</span>
+                        <div className="text-right">
+                          <span className="text-2xl font-bold text-blue-600">{reservation.totalPrice} €</span>
+                          <div className="mt-2">
+                            <button 
+                              onClick={() => navigate(`/reservation/${reservation.id}`)}
+                              className="text-sm text-blue-600 hover:text-blue-800 underline"
+                            >
+                              Voir les détails
+                            </button>
+                          </div>
+                        </div>
                       </div>
+                      {reservation.appartement?.images && reservation.appartement.images.length > 0 && (
+                        <div className="mt-4">
+                          <img 
+                            src={Array.isArray(reservation.appartement.images) 
+                              ? reservation.appartement.images[0]
+                              : typeof reservation.appartement.images === 'string'
+                              ? reservation.appartement.images
+                              : "https://via.placeholder.com/300x150"}
+                            alt={reservation.appartement.titre}
+                            className="w-full h-40 object-cover rounded-md"
+                            onError={(e) => {
+                              e.target.onerror = null; // Prevent infinite loop
+                              e.target.src = "https://via.placeholder.com/300x150";
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

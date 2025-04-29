@@ -304,7 +304,7 @@ export default function Home() {
             Bienvenue chez Livence
           </h1>
           {user ? (
-            <p className="text-white text-xl sm:text-2xl">Bonjour, {user.nom} </p>
+            <p className="text-white text-xl sm:text-2xl">Bonjour {user.name || user.nom}  </p>
           ) : (
             <p className="text-white text-xl sm:text-2xl">Vous n'êtes pas connecté.</p>
           )}
