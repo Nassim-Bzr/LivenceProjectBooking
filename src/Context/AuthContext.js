@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
+import { API_URL } from '../config/api';
 
 const AuthContext = createContext(null);
 
@@ -28,7 +29,7 @@ export const AuthProvider = ({ children }) => {
         
         const headers = { Authorization: `Bearer ${storedToken}` };
           
-        const { data } = await axios.get("http://localhost:5000/api/auth/me", { 
+        const { data } = await axios.get(`${API_URL}/auth/me`, { 
           withCredentials: true,
           headers
         });
@@ -63,7 +64,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password, rememberMe = false) => {
     try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/login", { email, password }, { withCredentials: true });
+      const { data } = await axios.post(`${API_URL}/auth/login`, { email, password }, { withCredentials: true });
       console.log("Réponse de connexion:", data);
 
       // Stocker le token reçu
@@ -107,7 +108,7 @@ export const AuthProvider = ({ children }) => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
       // Utiliser le nouveau point d'accès
-      await axios.post("http://localhost:5000/api/auth/logout", {}, { 
+      await axios.post(`${API_URL}/auth/logout`, {}, { 
         withCredentials: true,
         headers 
       });

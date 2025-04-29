@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../Context/AuthContext";
 import { useState, useEffect, useCallback } from "react";
 import { FaFilter, FaUser  , FaWifi, FaParking, FaSwimmingPool, FaBed, FaShower, FaEuroSign, FaMapMarkerAlt, FaSearch, FaTimes, FaSync } from "react-icons/fa";
+import { API_URL } from '../config/api';
 
 export default function Home() {
   const { user } = useAuth();
@@ -35,7 +36,7 @@ export default function Home() {
   const fetchAppartements = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/appartements', {
+      const response = await fetch(`${API_URL}/appartements`, {
         method: 'GET',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',

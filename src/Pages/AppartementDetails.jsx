@@ -5,6 +5,7 @@ import axios from "axios";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { FaStar, FaParking, FaWifi, FaBath, FaBed, FaUser, FaChevronRight, FaImage, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { useAuth } from "../Context/AuthContext";
+import { API_URL } from '../config/api';
 
 const AppartementDetails = () => {
   const { slug } = useParams();
@@ -25,12 +26,12 @@ const AppartementDetails = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const resAppart = await axios.get(`http://localhost:5000/api/appartements/slug/${slug}`);
+        const resAppart = await axios.get(`${API_URL}/appartements/slug/${slug}`);
         console.log("Données reçues de l'API:", resAppart.data);
         setAppartement(resAppart.data);
         setImageError(false);
     
-        const resDispo = await axios.get(`http://localhost:5000/api/appartements/disponibilites/${resAppart.data.id}`);
+        const resDispo = await axios.get(`${API_URL}/appartements/disponibilites/${resAppart.data.id}`);
         const dates = resDispo.data.map(d => {
           const date = new Date(d.date);
           return isNaN(date.getTime()) ? null : date;
@@ -162,7 +163,7 @@ const AppartementDetails = () => {
       
       // Envoyer la demande de réservation
       const response = await axios.post(
-        "http://localhost:5000/api/reservations",
+        `${API_URL}/reservations`,
         reservationData,
         { 
           withCredentials: true,

@@ -4,6 +4,7 @@ import { useAuth } from "../Context/AuthContext";
 import axios from "axios";
 import { FaUser, FaComments, FaPaperPlane, FaBuilding, FaLifeRing, FaArrowLeft } from "react-icons/fa";
 import io from "socket.io-client";
+import { API_URL, SOCKET_URL } from '../config/api';
 
 const Messagerie = () => {
   const { user } = useAuth();
@@ -33,7 +34,7 @@ const Messagerie = () => {
     console.log("Utilisateur connecté:", user);
 
     // Initialiser socket.io
-    const newSocket = io("http://localhost:5000");
+    const newSocket = io(SOCKET_URL);
     setSocket(newSocket);
 
     // Préparer l'en-tête d'autorisation pour les requêtes
@@ -44,7 +45,7 @@ const Messagerie = () => {
     const fetchAppartements = async () => {
       try {
         console.log("Chargement des appartements...");
-        const response = await axios.get("http://localhost:5000/api/appartements", {
+        const response = await axios.get(`${API_URL}/appartements`, {
           withCredentials: true,
           headers: authHeader
         });
@@ -202,7 +203,7 @@ const Messagerie = () => {
     
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:5000/api/messages/conversations", {
+      const response = await axios.get(`${API_URL}/messages/conversations`, {
         withCredentials: true,
         headers: authHeader
       });
@@ -275,7 +276,7 @@ const Messagerie = () => {
     const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
 
     try {
-      const response = await axios.get(`http://localhost:5000/api/messages/utilisateur/${contactId}`, {
+      const response = await axios.get(`${API_URL}/messages/utilisateur/${contactId}`, {
         withCredentials: true,
         headers: authHeader
       });
@@ -304,7 +305,7 @@ const Messagerie = () => {
         
         // Requête pour marquer les messages comme lus
         try {
-          await axios.post(`http://localhost:5000/api/messages/marquer-lus`, {
+          await axios.post(`${API_URL}/messages/marquer-lus`, {
             messageIds: unreadMessages.map(msg => msg.id)
           }, {
             withCredentials: true,
@@ -380,7 +381,7 @@ const Messagerie = () => {
         }
         
         // Utiliser la route spéciale pour contacter le support
-        response = await axios.post("http://localhost:5000/api/messages/contacter-support", messageData, {
+        response = await axios.post(`${API_URL}/messages/contacter-support`, messageData, {
           withCredentials: true,
           headers: {
             'Content-Type': 'application/json',
@@ -428,7 +429,7 @@ const Messagerie = () => {
 
         console.log("Données du message à envoyer:", messageData);
         
-        response = await axios.post("http://localhost:5000/api/messages/envoyer", messageData, {
+        response = await axios.post(`${API_URL}/messages/envoyer`, messageData, {
           withCredentials: true,
           headers: {
             'Content-Type': 'application/json',
@@ -552,7 +553,7 @@ const Messagerie = () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
       
-      await axios.post(`http://localhost:5000/api/messages/marquer-lus`, {
+      await axios.post(`${API_URL}/messages/marquer-lus`, {
         messageIds: [messageId]
       }, {
         withCredentials: true,
