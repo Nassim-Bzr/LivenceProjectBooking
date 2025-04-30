@@ -57,7 +57,7 @@ export const FirebaseProvider = ({ children }) => {
       authTriggerRef.current = false;
       
       // Envoyer les infos au backend
-      const response = await axios.post('http://localhost:5000/api/auth/google', {
+      const response = await axios.post('https://livence-ef9188d2aef0.herokuapp.com/api/auth/google', {
         email: user.email,
         nom: user.displayName,
         googleId: user.uid,
