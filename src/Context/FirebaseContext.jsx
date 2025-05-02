@@ -7,7 +7,9 @@ import {
   GoogleAuthProvider, 
   onAuthStateChanged,
   signOut as firebaseSignOut,
-  getRedirectResult
+  getRedirectResult,
+  setPersistence,
+  browserLocalPersistence
 } from "firebase/auth";
 import axios from "axios";
 import { useAuth } from "./AuthContext"; // Votre contexte Auth existant
@@ -26,6 +28,16 @@ const firebaseConfig = {
 // Initialisation de Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+// Forcer la persistance locale de la session Firebase
+setPersistence(auth, browserLocalPersistence)
+  .then(() => {
+    console.log("Persistance Firebase forcée sur browserLocalPersistence");
+  })
+  .catch((error) => {
+    console.error("Erreur de setPersistence:", error);
+  });
+
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({
   prompt: 'select_account'  // Force à montrer le sélecteur de compte Google chaque fois
