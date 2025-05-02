@@ -85,9 +85,7 @@ export const FirebaseProvider = ({ children }) => {
         }
         
         // Rediriger vers la page d'accueil après authentification réussie
-        if (!window.location.pathname.includes('/')) {
-          window.location.href = "/";
-        }
+        window.location.href = "/";
         
         setAuthInProgress(false);
         return true;
