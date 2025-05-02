@@ -440,7 +440,7 @@ const AppartementDetails = () => {
                   }}
                   className="bg-white border border-rose-600 text-rose-600 py-3 px-6 rounded-lg font-medium hover:bg-rose-50 transition-colors w-full"
                 >
-                  {showSmoobuBooking ? "Masquer" : "Réserver via Smoobu"}
+                  {showSmoobuBooking ? "Masquer" : "Réserver"}
                 </button>
               </div>
               
