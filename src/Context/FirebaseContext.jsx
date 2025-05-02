@@ -46,7 +46,7 @@ export const FirebaseProvider = ({ children }) => {
     
     try {
       setAuthInProgress(true);
-      
+      console.log("[handleGoogleAuth] Utilisateur reçu:", user);
       // Vérifier si un token existe déjà dans le stockage local et s'il ne s'agit pas d'une connexion intentionnelle
       const existingToken = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (existingToken && !authTriggerRef.current) {
@@ -66,6 +66,7 @@ export const FirebaseProvider = ({ children }) => {
         photo: user.photoURL
       }, { withCredentials: true });
       
+      console.log("[handleGoogleAuth] Réponse backend:", response.data);
       if (response.data.token) {
         // Stocker le token dans le localStorage
         localStorage.setItem("token", response.data.token);
@@ -82,6 +83,7 @@ export const FirebaseProvider = ({ children }) => {
             googleId: response.data.user.googleId
           };
           setUser(adaptedUser);
+          console.log("[handleGoogleAuth] Utilisateur adapté et setUser:", adaptedUser);
         }
         
         // Rediriger vers la page d'accueil après authentification réussie
@@ -169,9 +171,9 @@ export const FirebaseProvider = ({ children }) => {
     const handleRedirectResult = async () => {
       try {
         const result = await getRedirectResult(auth);
-        if (result) {
-          const user = result.user;
-          await handleGoogleAuth(user);
+        console.log("[handleRedirectResult] Résultat de getRedirectResult:", result);
+        if (result && result.user) {
+          await handleGoogleAuth(result.user);
         }
       } catch (error) {
         console.error("Erreur lors de la récupération du résultat de redirection:", error);
