@@ -86,8 +86,8 @@ export const FirebaseProvider = ({ children }) => {
           console.log("[handleGoogleAuth] Utilisateur adapté et setUser:", adaptedUser);
         }
         
-        // Rediriger vers la page d'accueil après authentification réussie
-        window.location.href = "/";
+        // Forcer le rechargement de la page pour garantir la prise en compte du token et du contexte utilisateur
+        window.location.reload();
         
         setAuthInProgress(false);
         return true;
