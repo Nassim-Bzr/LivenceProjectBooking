@@ -22,19 +22,7 @@ export default function Login() {
   }, [user, navigate]);
 
   // Au chargement de la page de login, nous nous assurons qu'aucune session Firebase n'est active
-  useEffect(() => {
-    const clearFirebaseSession = async () => {
-      try {
-        const auth = getAuth();
-        await signOut(auth);
-        console.log("Session Firebase supprimée pour permettre une nouvelle connexion");
-      } catch (e) {
-        console.error("Erreur lors de la déconnexion Firebase:", e);
-      }
-    };
-    
-    clearFirebaseSession();
-  }, []);
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
