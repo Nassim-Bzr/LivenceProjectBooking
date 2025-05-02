@@ -174,6 +174,10 @@ export const FirebaseProvider = ({ children }) => {
         console.log("[handleRedirectResult] Résultat de getRedirectResult:", result);
         if (result && result.user) {
           await handleGoogleAuth(result.user);
+        } else if (auth.currentUser) {
+          // Cas où l'utilisateur est déjà connecté côté Firebase
+          console.log("[handleRedirectResult] Utilisateur déjà connecté via Firebase:", auth.currentUser);
+          await handleGoogleAuth(auth.currentUser);
         }
       } catch (error) {
         console.error("Erreur lors de la récupération du résultat de redirection:", error);
