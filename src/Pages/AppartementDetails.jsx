@@ -431,8 +431,7 @@ const AppartementDetails = () => {
               </div>
 
               {/* Boutons de réservation */}
-      
-                
+              <div>
                 <button
                   onClick={() => {
                     setShowSmoobuBooking(!showSmoobuBooking);
@@ -524,6 +523,7 @@ const AppartementDetails = () => {
               )}
             </div>
           </div>
+          
         </>
       ) : (
         <div className="flex justify-center">
