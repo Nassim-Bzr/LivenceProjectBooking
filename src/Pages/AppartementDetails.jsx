@@ -439,7 +439,6 @@ const AppartementDetails = () => {
                   }}
                   className="bg-rose-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-rose-700 transition-colors w-full"
                 >
-                  {showDirectBooking ? "Masquer" : "Réserver sur notre site"}
                 </button>
                 
                 <button
