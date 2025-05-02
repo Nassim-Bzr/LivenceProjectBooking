@@ -706,15 +706,15 @@ const Messagerie = () => {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+                <div className="flex-1 h-0 min-h-0 overflow-y-auto p-4 bg-gray-50 flex flex-col justify-end">
                   {messages.length === 0 ? (
-                    <div className="h-full flex items-center justify-center text-gray-500">
+                    <div className="flex-1 flex items-center justify-center text-gray-500">
                       {selectedContact.isDefault 
                         ? "Démarrez la conversation en envoyant un message" 
                         : "Aucun message dans cette conversation"}
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-4 flex flex-col justify-end">
                       {messages.map((message) => {
                         const isFromCurrentUser = message.senderId === user.id;
                         return (
@@ -722,7 +722,7 @@ const Messagerie = () => {
                             key={message.id} 
                             className={`flex ${isFromCurrentUser ? 'justify-end' : 'justify-start'}`}
                           >
-                            <div 
+                            <div
                               className={`max-w-3/4 rounded-lg px-4 py-2 ${
                                 isFromCurrentUser 
                                   ? message.error 
@@ -746,59 +746,10 @@ const Messagerie = () => {
                                   </div>
                                 )}
                               </div>
-                              <div className="text-xs text-right mt-1 flex items-center justify-end">
-                                {formatMessageTime(message.createdAt)}
-                                {message.isTemp && (
-                                  <svg className="ml-1 animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                  </svg>
-                                )}
-                                {message.error && (
-                                  <svg className="ml-1 h-3 w-3 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                )}
-                                {isFromCurrentUser && !message.isTemp && !message.error && (
-                                  <span className="ml-1 flex items-center" title={message.lu ? "Lu" : "Non lu"}>
-                                    {message.lu ? (
-                                      <>
-                                        <span className="text-xs text-blue-500 mr-1">Lu</span>
-                                        <svg className="h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                                        </svg>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <span className="text-xs text-gray-400 mr-1">Non lu</span>
-                                        <svg className="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z"/>
-                                        </svg>
-                                      </>
-                                    )}
-                                  </span>
-                                )}
-                              </div>
                             </div>
                           </div>
                         );
                       })}
-                      {isTyping && (
-                        <div className="flex justify-start">
-                          <div className="bg-gray-100 text-gray-600 rounded-lg px-4 py-2 max-w-max">
-                            <div className="flex items-center">
-                              <span className="text-sm mr-2">
-                                <span className="font-semibold">{selectedContact.nom}</span> est en train d'écrire
-                              </span>
-                              <span className="flex space-x-1">
-                                <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
-                                <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "200ms" }}></span>
-                                <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "400ms" }}></span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                       <div ref={messagesEndRef} />
                     </div>
                   )}
