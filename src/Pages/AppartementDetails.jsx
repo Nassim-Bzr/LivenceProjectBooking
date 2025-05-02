@@ -431,15 +431,7 @@ const AppartementDetails = () => {
               </div>
 
               {/* Boutons de réservation */}
-              <div className="mt-6 mb-4 flex flex-col gap-3">
-                <button
-                  onClick={() => {
-                    setShowDirectBooking(!showDirectBooking);
-                    if (showSmoobuBooking) setShowSmoobuBooking(false);
-                  }}
-                  className="bg-rose-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-rose-700 transition-colors w-full"
-                >
-                </button>
+      
                 
                 <button
                   onClick={() => {
