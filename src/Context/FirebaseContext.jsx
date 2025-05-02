@@ -2,10 +2,12 @@ import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { initializeApp } from "firebase/app";
 import { 
   getAuth, 
-  signInWithPopup, 
+  signInWithPopup,
+  signInWithRedirect,
   GoogleAuthProvider, 
   onAuthStateChanged,
-  signOut as firebaseSignOut
+  signOut as firebaseSignOut,
+  getRedirectResult
 } from "firebase/auth";
 import axios from "axios";
 import { useAuth } from "./AuthContext"; // Votre contexte Auth existant
@@ -143,12 +145,18 @@ export const FirebaseProvider = ({ children }) => {
         // Ignorer les erreurs, nous voulons juste être sûrs qu'il n'y a pas de session
       }
       
-      const result = await signInWithPopup(auth, provider);
-      // Récupérer les informations de l'utilisateur
-      const user = result.user;
+      // Vérifier si on est sur mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
-      // Authentifier avec le backend
-      await handleGoogleAuth(user);
+      if (isMobile) {
+        // Sur mobile, utiliser signInWithRedirect
+        await signInWithRedirect(auth, provider);
+      } else {
+        // Sur desktop, utiliser signInWithPopup
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        await handleGoogleAuth(user);
+      }
       
     } catch (error) {
       console.error("Erreur de connexion avec Google:", error);
@@ -157,6 +165,25 @@ export const FirebaseProvider = ({ children }) => {
       throw error;
     }
   };
+
+  // Ajouter un useEffect pour gérer le résultat de la redirection
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          const user = result.user;
+          await handleGoogleAuth(user);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération du résultat de redirection:", error);
+        setAuthInProgress(false);
+        authTriggerRef.current = false;
+      }
+    };
+
+    handleRedirectResult();
+  }, []);
 
   const signOut = async () => {
     try {
