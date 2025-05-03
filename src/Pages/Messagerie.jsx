@@ -201,6 +201,14 @@ const Messagerie = () => {
       }
     }
     
+    // Créer le contact support par défaut ici, avant le try/catch
+    const defaultSupport = {
+      id: "support",
+      nom: "Support Livence",
+      role: "admin",
+      isDefault: true
+    };
+    
     setLoading(true);
     try {
       const response = await axios.get(`${API_URL}/messages/conversations`, {
@@ -224,13 +232,7 @@ const Messagerie = () => {
       
       if (!hasAdmin) {
         // Ajouter un contact de support
-        const supportContact = {
-          id: "support",
-          nom: "Support Livence",
-          role: "admin",
-          isDefault: true
-        };
-        contactsList.unshift(supportContact);
+        contactsList.unshift(defaultSupport);
       }
       
       setContacts(contactsList);
@@ -243,12 +245,6 @@ const Messagerie = () => {
     } catch (err) {
       console.error("Erreur lors du chargement des contacts:", err);
       // Créer un contact admin par défaut en cas d'erreur
-      const defaultSupport = {
-        id: "support",
-        nom: "Support Livence",
-        role: "admin",
-        isDefault: true
-      };
       setContacts([defaultSupport]);
       
       // Ne sélectionne le support que si aucun contact n'est déjà sélectionné
