@@ -236,12 +236,6 @@ const Messagerie = () => {
       }
       
       setContacts(contactsList);
-      
-      // Ne sélectionne le support que si aucun contact n'est déjà sélectionné
-      if (!selectedContact) {
-        console.log("Sélection du contact de support par défaut (catch)");
-        setSelectedContact(defaultSupport);
-      }
     } catch (err) {
       console.error("Erreur lors du chargement des contacts:", err);
       // Créer un contact admin par défaut en cas d'erreur
@@ -491,7 +485,8 @@ const Messagerie = () => {
       
       if (adminContact) {
         console.log("Contact admin existant trouvé:", adminContact);
-        setSelectedContact(adminContact);
+        // Seul le clic de l'utilisateur peut sélectionner un contact
+        // Ne pas sélectionner automatiquement
         setMessages([]);
         setMessageType("support");
         fetchMessages(adminContact.id);
@@ -512,8 +507,7 @@ const Messagerie = () => {
         setContacts(prevContacts => [supportContact, ...prevContacts]);
       }
       
-      setSelectedContact(supportContact);
-      console.log('setSelectedContact (supportContact) appelé avec', supportContact);
+      // Ne pas sélectionner automatiquement le support
       setMessages([]);
       setMessageType("support");
     } catch (error) {
@@ -533,8 +527,7 @@ const Messagerie = () => {
           : [supportContact, ...prevContacts]
       );
       
-      setSelectedContact(supportContact);
-      console.log('setSelectedContact (supportContact) appelé avec', supportContact);
+      // Ne pas sélectionner automatiquement le support
       setMessages([]);
       setMessageType("support");
     }
