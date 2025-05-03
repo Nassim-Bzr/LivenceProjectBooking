@@ -98,9 +98,6 @@ export const FirebaseProvider = ({ children }) => {
           console.log("[handleGoogleAuth] Utilisateur adapté et setUser:", adaptedUser);
         }
         
-        // Forcer le rechargement de la page pour garantir la prise en compte du token et du contexte utilisateur
-        window.location.reload();
-        
         setAuthInProgress(false);
         return true;
       }
@@ -157,17 +154,21 @@ export const FirebaseProvider = ({ children }) => {
         // Ignorer les erreurs, nous voulons juste être sûrs qu'il n'y a pas de session
       }
       
-      // Vérifier si on est sur mobile
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
-      if (isMobile) {
-        // Sur mobile, utiliser signInWithRedirect
-        await signInWithRedirect(auth, provider);
-      } else {
-        // Sur desktop, utiliser signInWithPopup
+      // Utiliser signInWithPopup sur tous les appareils pour une meilleure fiabilité
+      try {
         const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        await handleGoogleAuth(user);
+        console.log("Résultat signInWithPopup:", result);
+        if (result && result.user) {
+          const success = await handleGoogleAuth(result.user);
+          if (success) {
+            // Redirection directe vers la page d'accueil, sans reload
+            window.location.href = "/";
+          }
+        }
+      } catch (popupError) {
+        console.log("Erreur avec popup, tentative de fallback avec redirect:", popupError);
+        // Si la popup échoue (bloquée par le navigateur, etc.), essayer signInWithRedirect en fallback
+        await signInWithRedirect(auth, provider);
       }
       
     } catch (error) {
@@ -186,10 +187,22 @@ export const FirebaseProvider = ({ children }) => {
         console.log("[handleRedirectResult] Résultat de getRedirectResult:", result);
         console.log("[handleRedirectResult] auth.currentUser:", auth.currentUser);
         if (result && result.user) {
-          await handleGoogleAuth(result.user);
+          const success = await handleGoogleAuth(result.user);
+          if (success) {
+            // Attendre brièvement pour s'assurer que le localStorage est mis à jour
+            setTimeout(() => {
+              window.location.href = "/";
+            }, 200);
+          }
         } else if (auth.currentUser) {
           console.log("[handleRedirectResult] Utilisateur déjà connecté via Firebase:", auth.currentUser);
-          await handleGoogleAuth(auth.currentUser);
+          const success = await handleGoogleAuth(auth.currentUser);
+          if (success) {
+            // Attendre brièvement pour s'assurer que le localStorage est mis à jour
+            setTimeout(() => {
+              window.location.href = "/";
+            }, 200);
+          }
         }
       } catch (error) {
         console.error("Erreur lors de la récupération du résultat de redirection:", error);
