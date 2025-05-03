@@ -655,7 +655,7 @@ const Messagerie = () => {
                 Contacter le support
               </button>
             </div>
-            <div className="overflow-y-auto h-96">
+            <div className="overflow-y-auto">
               {contacts.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
                   Aucune conversation
