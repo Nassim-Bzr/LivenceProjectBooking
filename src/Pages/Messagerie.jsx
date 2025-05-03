@@ -235,9 +235,11 @@ const Messagerie = () => {
       
       setContacts(contactsList);
       
-      // Sélectionner le premier contact par défaut
-      if (contactsList.length > 0 && !selectedContact) {
-        console.log("Sélection du premier contact:", contactsList[0]);
+      // Si aucun contact n'est sélectionné ou si le contact sélectionné n'existe plus, sélectionner le premier contact
+      if (
+        contactsList.length > 0 &&
+        (!selectedContact || !contactsList.some(c => c.id === selectedContact.id))
+      ) {
         setSelectedContact(contactsList[0]);
       }
     } catch (err) {
