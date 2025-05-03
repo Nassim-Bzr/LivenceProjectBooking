@@ -246,12 +246,6 @@ const Messagerie = () => {
       console.error("Erreur lors du chargement des contacts:", err);
       // Créer un contact admin par défaut en cas d'erreur
       setContacts([defaultSupport]);
-      
-      // Ne sélectionne le support que si aucun contact n'est déjà sélectionné
-      if (!selectedContact) {
-        console.log("Sélection du contact de support par défaut (catch)");
-        setSelectedContact(defaultSupport);
-      }
     } finally {
       setLoading(false);
     }
