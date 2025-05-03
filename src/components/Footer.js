@@ -3,7 +3,7 @@ export default function Footer() {
       <footer className="bg-black text-white py-6">
         <div className="container mx-auto text-center">
           <p className="text-sm">
-            © {new Date().getFullYear()} BookingApp. Tous droits réservés.
+            © {new Date().getFullYear()} Livence. Tous droits réservés.
           </p>
       
         </div>
