@@ -254,7 +254,7 @@ const Messagerie = () => {
       };
       setContacts([defaultSupport]);
       
-      if (!selectedContact) {
+      if (!selectedContact || !contacts.some(c => c.id === selectedContact.id)) {
         console.log("Sélection du contact de support par défaut (catch)");
         setSelectedContact(defaultSupport);
       }
