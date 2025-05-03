@@ -241,6 +241,7 @@ const Messagerie = () => {
         (!selectedContact || !contactsList.some(c => c.id === selectedContact.id))
       ) {
         setSelectedContact(contactsList[0]);
+        console.log('setSelectedContact (auto) appelé avec', contactsList[0]);
       }
     } catch (err) {
       console.error("Erreur lors du chargement des contacts:", err);
@@ -254,7 +255,7 @@ const Messagerie = () => {
       setContacts([defaultSupport]);
       
       if (!selectedContact) {
-        console.log("Sélection du contact de support par défaut");
+        console.log("Sélection du contact de support par défaut (catch)");
         setSelectedContact(defaultSupport);
       }
     } finally {
@@ -412,6 +413,7 @@ const Messagerie = () => {
           
           // Mettre à jour le contact sélectionné
           setSelectedContact(adminContact);
+          console.log('setSelectedContact (adminContact) appelé avec', adminContact);
           
           // Recharger les messages pour la nouvelle conversation avec l'admin réel
           fetchMessages(adminId);
@@ -523,6 +525,7 @@ const Messagerie = () => {
       }
       
       setSelectedContact(supportContact);
+      console.log('setSelectedContact (supportContact) appelé avec', supportContact);
       setMessages([]);
       setMessageType("support");
     } catch (error) {
@@ -543,6 +546,7 @@ const Messagerie = () => {
       );
       
       setSelectedContact(supportContact);
+      console.log('setSelectedContact (supportContact) appelé avec', supportContact);
       setMessages([]);
       setMessageType("support");
     }
@@ -670,7 +674,10 @@ const Messagerie = () => {
                       className={`border-b cursor-pointer hover:bg-gray-50 ${
                         selectedContact?.id === contact.id ? 'bg-rose-50' : ''
                       }`}
-                      onClick={() => setSelectedContact(contact)}
+                      onClick={() => {
+                        setSelectedContact(contact);
+                        console.log('setSelectedContact (click) appelé avec', contact);
+                      }}
                     >
                       <div className="flex items-center p-4">
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
