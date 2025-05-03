@@ -159,11 +159,8 @@ export const FirebaseProvider = ({ children }) => {
         const result = await signInWithPopup(auth, provider);
         console.log("Résultat signInWithPopup:", result);
         if (result && result.user) {
-          const success = await handleGoogleAuth(result.user);
-          if (success) {
-            // Redirection directe vers la page d'accueil, sans reload
-            window.location.href = "/";
-          }
+          await handleGoogleAuth(result.user);
+          // Ne pas rediriger ici, laisser l'AuthContext le faire
         }
       } catch (popupError) {
         console.log("Erreur avec popup, tentative de fallback avec redirect:", popupError);
@@ -187,22 +184,12 @@ export const FirebaseProvider = ({ children }) => {
         console.log("[handleRedirectResult] Résultat de getRedirectResult:", result);
         console.log("[handleRedirectResult] auth.currentUser:", auth.currentUser);
         if (result && result.user) {
-          const success = await handleGoogleAuth(result.user);
-          if (success) {
-            // Attendre brièvement pour s'assurer que le localStorage est mis à jour
-            setTimeout(() => {
-              window.location.href = "/";
-            }, 200);
-          }
+          await handleGoogleAuth(result.user);
+          // Ne pas rediriger ici, laisser l'AuthContext le faire
         } else if (auth.currentUser) {
           console.log("[handleRedirectResult] Utilisateur déjà connecté via Firebase:", auth.currentUser);
-          const success = await handleGoogleAuth(auth.currentUser);
-          if (success) {
-            // Attendre brièvement pour s'assurer que le localStorage est mis à jour
-            setTimeout(() => {
-              window.location.href = "/";
-            }, 200);
-          }
+          await handleGoogleAuth(auth.currentUser);
+          // Ne pas rediriger ici, laisser l'AuthContext le faire
         }
       } catch (error) {
         console.error("Erreur lors de la récupération du résultat de redirection:", error);
