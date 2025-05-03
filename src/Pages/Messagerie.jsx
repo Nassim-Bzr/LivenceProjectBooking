@@ -755,58 +755,7 @@ const Messagerie = () => {
                   )}
                 </div>
 
-                {/* Options de message */}
-                <div className="p-3 border-t bg-gray-50">
-                  <div className="flex mb-2">
-                    <button
-                      className={`px-3 py-1 rounded-md mr-2 ${
-                        messageType === "general" 
-                          ? "bg-rose-600 text-white" 
-                          : "bg-gray-200 hover:bg-gray-300"
-                      }`}
-                      onClick={() => setMessageType("general")}
-                    >
-                      <FaComments className="inline mr-1" /> Général
-                    </button>
-                    <button
-                      className={`px-3 py-1 rounded-md mr-2 ${
-                        messageType === "support" 
-                          ? "bg-rose-600 text-white" 
-                          : "bg-gray-200 hover:bg-gray-300"
-                      }`}
-                      onClick={() => setMessageType("support")}
-                    >
-                      <FaLifeRing className="inline mr-1" /> Support
-                    </button>
-                    <button
-                      className={`px-3 py-1 rounded-md ${
-                        messageType === "appartement" 
-                          ? "bg-rose-600 text-white" 
-                          : "bg-gray-200 hover:bg-gray-300"
-                      }`}
-                      onClick={() => setMessageType("appartement")}
-                    >
-                      <FaBuilding className="inline mr-1" /> Appartement
-                    </button>
-                  </div>
-
-                  {messageType === "appartement" && (
-                    <div className="mb-2">
-                      <select
-                        className="w-full p-2 border rounded"
-                        value={selectedAppartement || ""}
-                        onChange={(e) => setSelectedAppartement(e.target.value)}
-                      >
-                        <option value="">Sélectionner un appartement</option>
-                        {appartements.map((appartement) => (
-                          <option key={appartement.id} value={appartement.id}>
-                            {appartement.titre}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
+              
 
                 {/* Formulaire d'envoi */}
                 <form onSubmit={handleSendMessage} className="p-4 border-t flex">
