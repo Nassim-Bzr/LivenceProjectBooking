@@ -3,7 +3,7 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import axios from "axios";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { FaStar, FaParking, FaWifi, FaBath, FaBed, FaUser, FaChevronRight, FaImage, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { FaStar, FaParking, FaWifi, FaBath, FaBed, FaUser, FaChevronRight, FaImage, FaCheckCircle, FaTimesCircle, FaEdit, FaSave } from "react-icons/fa";
 import { useAuth } from "../Context/AuthContext";
 import { API_URL } from '../config/api';
 
@@ -22,6 +22,22 @@ const AppartementDetails = () => {
   const [showSmoobuBooking, setShowSmoobuBooking] = useState(false);
   const [showDirectBooking, setShowDirectBooking] = useState(false);
   const [guestsCount, setGuestsCount] = useState(1);
+  
+  // État pour l'édition d'appartement
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    titre: '',
+    description: '',
+    localisation: '',
+    prixParNuit: 0,
+    surface: 0,
+    capacite: {},
+    inclus: [],
+    nonInclus: [],
+    smoobuId: '',
+    images: []
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,6 +47,20 @@ const AppartementDetails = () => {
         setAppartement(resAppart.data);
         setImageError(false);
     
+        // Initialiser le formulaire d'édition avec les données actuelles
+        setEditForm({
+          titre: resAppart.data.titre,
+          description: resAppart.data.description,
+          localisation: resAppart.data.localisation,
+          prixParNuit: resAppart.data.prixParNuit,
+          surface: resAppart.data.surface,
+          capacite: parseJSON(resAppart.data.capacite) || {},
+          inclus: parseJSON(resAppart.data.inclus) || [],
+          nonInclus: parseJSON(resAppart.data.nonInclus) || [],
+          smoobuId: resAppart.data.smoobuId || '',
+          images: getImages(resAppart.data.images)
+        });
+
         const resDispo = await axios.get(`${API_URL}/appartements/disponibilites/${resAppart.data.id}`);
         const dates = resDispo.data.map(d => {
           const date = new Date(d.date);
@@ -281,10 +311,397 @@ const AppartementDetails = () => {
     }
   }, [showSmoobuBooking, appartement]);
 
+  // Gestion des formulaires d'édition d'appartement
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleCapaciteChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({
+      ...prev,
+      capacite: {
+        ...prev.capacite,
+        [name]: parseInt(value, 10)
+      }
+    }));
+  };
+
+  const handleInclusChange = (e) => {
+    const { value, checked } = e.target;
+    if (checked) {
+      setEditForm(prev => ({
+        ...prev,
+        inclus: [...prev.inclus, value]
+      }));
+    } else {
+      setEditForm(prev => ({
+        ...prev,
+        inclus: prev.inclus.filter(item => item !== value)
+      }));
+    }
+  };
+
+  const handleNonInclusChange = (e) => {
+    const { value, checked } = e.target;
+    if (checked) {
+      setEditForm(prev => ({
+        ...prev,
+        nonInclus: [...prev.nonInclus, value]
+      }));
+    } else {
+      setEditForm(prev => ({
+        ...prev,
+        nonInclus: prev.nonInclus.filter(item => item !== value)
+      }));
+    }
+  };
+
+  const handleImageChange = (e, index) => {
+    const { value } = e.target;
+    const updatedImages = [...editForm.images];
+    updatedImages[index] = value;
+    setEditForm(prev => ({
+      ...prev,
+      images: updatedImages
+    }));
+  };
+
+  const addImageField = () => {
+    setEditForm(prev => ({
+      ...prev,
+      images: [...prev.images, '']
+    }));
+  };
+
+  const removeImageField = (index) => {
+    setEditForm(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleSubmitEdit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+    
+    try {
+      // Préparer les données au format attendu par l'API
+      const updateData = {
+        titre: editForm.titre,
+        description: editForm.description,
+        localisation: editForm.localisation,
+        prixParNuit: parseFloat(editForm.prixParNuit),
+        surface: parseInt(editForm.surface, 10),
+        capacite: JSON.stringify(editForm.capacite),
+        inclus: JSON.stringify(editForm.inclus),
+        nonInclus: JSON.stringify(editForm.nonInclus),
+        smoobuId: editForm.smoobuId ? parseInt(editForm.smoobuId, 10) : null,
+        images: JSON.stringify(editForm.images)
+      };
+      
+      console.log("Données de mise à jour:", updateData);
+      
+      // Envoyer la demande de mise à jour
+      const response = await axios.put(
+        `${API_URL}/appartements/${appartement.id}`,
+        updateData,
+        { 
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token') || sessionStorage.getItem('token')}`
+          }
+        }
+      );
+      
+      console.log("Réponse de mise à jour:", response.data);
+      
+      // Afficher un message de succès
+      setSuccessMessage("L'appartement a été mis à jour avec succès !");
+      
+      // Recharger les données de l'appartement
+      const resAppart = await axios.get(`${API_URL}/appartements/slug/${slug}`);
+      setAppartement(resAppart.data);
+      
+      // Sortir du mode édition
+      setIsEditing(false);
+      
+    } catch (err) {
+      console.error("Erreur lors de la mise à jour de l'appartement:", err);
+      if (err.response && err.response.data) {
+        setError(err.response.data.message || "Erreur lors de la mise à jour de l'appartement");
+      } else {
+        setError("Erreur de connexion au serveur");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Constante pour vérifier si l'utilisateur est admin
+  const isAdmin = user && user.role === 'admin';
+
+  // Rendu du formulaire d'édition d'appartement
+  const renderEditForm = () => {
+    return (
+      <form onSubmit={handleSubmitEdit} className="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
+          <FaEdit className="mr-2" /> Modifier l'appartement
+        </h2>
+        
+        <div className="mb-4">
+          <label htmlFor="titre" className="block text-sm font-medium text-gray-700 mb-1">Titre</label>
+          <input
+            type="text"
+            id="titre"
+            name="titre"
+            value={editForm.titre}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded-md"
+            required
+          />
+        </div>
+        
+        <div className="mb-4">
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <textarea
+            id="description"
+            name="description"
+            value={editForm.description}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded-md"
+            rows={6}
+            required
+          />
+        </div>
+        
+        <div className="mb-4">
+          <label htmlFor="localisation" className="block text-sm font-medium text-gray-700 mb-1">Localisation</label>
+          <input
+            type="text"
+            id="localisation"
+            name="localisation"
+            value={editForm.localisation}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded-md"
+            required
+          />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label htmlFor="prixParNuit" className="block text-sm font-medium text-gray-700 mb-1">Prix par nuit (€)</label>
+            <input
+              type="number"
+              id="prixParNuit"
+              name="prixParNuit"
+              value={editForm.prixParNuit}
+              onChange={handleInputChange}
+              className="w-full p-2 border rounded-md"
+              min="0"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="surface" className="block text-sm font-medium text-gray-700 mb-1">Surface (m²)</label>
+            <input
+              type="number"
+              id="surface"
+              name="surface"
+              value={editForm.surface}
+              onChange={handleInputChange}
+              className="w-full p-2 border rounded-md"
+              min="0"
+              required
+            />
+          </div>
+        </div>
+        
+        <h3 className="text-lg font-semibold mt-6 mb-3 text-gray-800">Capacité</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label htmlFor="voyageurs" className="block text-sm font-medium text-gray-700 mb-1">Nombre de voyageurs</label>
+            <input
+              type="number"
+              id="voyageurs"
+              name="voyageurs"
+              value={editForm.capacite.voyageurs || 1}
+              onChange={handleCapaciteChange}
+              className="w-full p-2 border rounded-md"
+              min="1"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="chambres" className="block text-sm font-medium text-gray-700 mb-1">Nombre de chambres</label>
+            <input
+              type="number"
+              id="chambres"
+              name="chambres"
+              value={editForm.capacite.chambres || 1}
+              onChange={handleCapaciteChange}
+              className="w-full p-2 border rounded-md"
+              min="0"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="lits" className="block text-sm font-medium text-gray-700 mb-1">Nombre de lits</label>
+            <input
+              type="number"
+              id="lits"
+              name="lits"
+              value={editForm.capacite.lits || 1}
+              onChange={handleCapaciteChange}
+              className="w-full p-2 border rounded-md"
+              min="1"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="sallesDeBain" className="block text-sm font-medium text-gray-700 mb-1">Nombre de salles de bain</label>
+            <input
+              type="number"
+              id="sallesDeBain"
+              name="sallesDeBain"
+              value={editForm.capacite.sallesDeBain || 1}
+              onChange={handleCapaciteChange}
+              className="w-full p-2 border rounded-md"
+              min="0"
+              required
+            />
+          </div>
+        </div>
+
+        <h3 className="text-lg font-semibold mt-6 mb-3 text-gray-800">Services inclus</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+          {["Wifi", "Parking gratuit", "Netflix", "Cuisine", "Climatisation", "Lave-linge", "Sèche-linge", "Fer à repasser"].map(item => (
+            <div key={item} className="flex items-center">
+              <input
+                type="checkbox"
+                id={`inclus-${item}`}
+                value={item}
+                checked={editForm.inclus.includes(item)}
+                onChange={handleInclusChange}
+                className="mr-2"
+              />
+              <label htmlFor={`inclus-${item}`} className="text-sm text-gray-700">{item}</label>
+            </div>
+          ))}
+        </div>
+
+        <h3 className="text-lg font-semibold mt-6 mb-3 text-gray-800">Non inclus</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+          {["Détecteur de fumée", "Détecteur de monoxyde de carbone", "Animaux de compagnie"].map(item => (
+            <div key={item} className="flex items-center">
+              <input
+                type="checkbox"
+                id={`nonInclus-${item}`}
+                value={item}
+                checked={editForm.nonInclus.includes(item)}
+                onChange={handleNonInclusChange}
+                className="mr-2"
+              />
+              <label htmlFor={`nonInclus-${item}`} className="text-sm text-gray-700">{item}</label>
+            </div>
+          ))}
+        </div>
+
+        <h3 className="text-lg font-semibold mt-6 mb-3 text-gray-800">ID Smoobu</h3>
+        <div className="mb-4">
+          <input
+            type="text"
+            id="smoobuId"
+            name="smoobuId"
+            value={editForm.smoobuId || ''}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded-md"
+            placeholder="ID Smoobu (optionnel)"
+          />
+          <p className="text-sm text-gray-500 mt-1">Laisser vide si vous n'utilisez pas Smoobu</p>
+        </div>
+
+        <h3 className="text-lg font-semibold mt-6 mb-3 text-gray-800">Images</h3>
+        {editForm.images.map((image, index) => (
+          <div key={index} className="flex items-center mb-2">
+            <input
+              type="text"
+              value={image}
+              onChange={(e) => handleImageChange(e, index)}
+              className="flex-grow p-2 border rounded-md mr-2"
+              placeholder="URL de l'image"
+            />
+            <button
+              type="button"
+              onClick={() => removeImageField(index)}
+              className="bg-red-500 text-white p-2 rounded-md hover:bg-red-600"
+            >
+              &times;
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={addImageField}
+          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 mb-4"
+        >
+          + Ajouter une image
+        </button>
+
+        <div className="flex justify-end gap-4 mt-6">
+          <button
+            type="button"
+            onClick={() => setIsEditing(false)}
+            className="bg-gray-300 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-400"
+          >
+            Annuler
+          </button>
+          <button
+            type="submit"
+            className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 flex items-center"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                Enregistrement...
+              </>
+            ) : (
+              <>
+                <FaSave className="mr-2" />
+                Enregistrer
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {appartement ? (
         <>
+          {/* Bouton d'édition pour l'administrateur */}
+          {isAdmin && !isEditing && (
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={() => setIsEditing(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center"
+              >
+                <FaEdit className="mr-2" /> Modifier l'appartement
+              </button>
+            </div>
+          )}
+          
+          {/* Formulaire d'édition */}
+          {isAdmin && isEditing && renderEditForm()}
+          
           <h1 className="text-3xl font-bold mb-4">{appartement.titre}</h1>
           
           {/* Afficher les messages de succès/erreur */}

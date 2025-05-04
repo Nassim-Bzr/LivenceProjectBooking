@@ -17,7 +17,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const response = await axios.post("https://livence-ef9188d2aef0.herokuapp.com/users/register", {
+      const response = await axios.post("https://livenc-app-bc6db42f80d2.herokuapp.com/users/register", {
         nom,
         email,
         password,
