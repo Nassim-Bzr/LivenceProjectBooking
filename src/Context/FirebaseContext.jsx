@@ -52,6 +52,7 @@ export const FirebaseProvider = ({ children }) => {
   const [authInProgress, setAuthInProgress] = useState(false);
   const { user, setUser } = useAuth(); // Récupérer user et setUser
   const authTriggerRef = useRef(false); // Permet de suivre si l'auth a été déclenchée intentionnellement
+  const authTimeoutRef = useRef(null); // Pour gérer le timeout de l'authentification
 
   const handleGoogleAuth = async (user) => {
     if (authInProgress) return null;
@@ -137,7 +138,13 @@ export const FirebaseProvider = ({ children }) => {
       setFirebaseLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      // Nettoyer le timeout si existant
+      if (authTimeoutRef.current) {
+        clearTimeout(authTimeoutRef.current);
+      }
+    };
   }, [user, authInProgress]);
 
   const signInWithGoogle = async () => {
@@ -147,32 +154,71 @@ export const FirebaseProvider = ({ children }) => {
       setAuthInProgress(true);
       authTriggerRef.current = true; // Marquer cette authentification comme intentionnelle
       
+      // Mettre en place un timeout pour réinitialiser l'état si ça prend trop de temps
+      authTimeoutRef.current = setTimeout(() => {
+        console.log("Timeout d'authentification Google atteint, réinitialisation");
+        setAuthInProgress(false);
+        authTriggerRef.current = false;
+        // Rediriger vers la page de login avec un message d'erreur
+        window.location.href = '/login?error=timeout';
+      }, 30000); // 30 secondes
+      
       // Essayer de déconnecter l'utilisateur précédent au cas où
       try {
         await firebaseSignOut(auth);
       } catch (e) {
         // Ignorer les erreurs, nous voulons juste être sûrs qu'il n'y a pas de session
+        console.log("Erreur lors de la déconnexion Firebase:", e);
       }
       
-      // Utiliser signInWithPopup sur tous les appareils pour une meilleure fiabilité
-      try {
-        const result = await signInWithPopup(auth, provider);
-        console.log("Résultat signInWithPopup:", result);
-        if (result && result.user) {
-          await handleGoogleAuth(result.user);
-          // Ne pas rediriger ici, laisser l'AuthContext le faire
-        }
-      } catch (popupError) {
-        console.log("Erreur avec popup, tentative de fallback avec redirect:", popupError);
-        // Si la popup échoue (bloquée par le navigateur, etc.), essayer signInWithRedirect en fallback
+      // Sur mobile, utiliser signInWithRedirect qui fonctionne mieux
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        console.log("Appareil mobile détecté, utilisation de signInWithRedirect");
         await signInWithRedirect(auth, provider);
+      } else {
+        // Sur desktop, essayer d'abord popup, puis redirection si la popup échoue
+        try {
+          console.log("Tentative de connexion avec popup");
+          const result = await signInWithPopup(auth, provider);
+          console.log("Résultat signInWithPopup:", result);
+          
+          // Nettoyer le timeout car nous avons un résultat
+          if (authTimeoutRef.current) {
+            clearTimeout(authTimeoutRef.current);
+            authTimeoutRef.current = null;
+          }
+          
+          if (result && result.user) {
+            const success = await handleGoogleAuth(result.user);
+            if (success) {
+              window.location.href = '/'; // Rediriger vers la page d'accueil en cas de succès
+            } else {
+              window.location.href = '/login?error=failed';
+            }
+          }
+        } catch (popupError) {
+          console.log("Erreur avec popup, tentative de fallback avec redirect:", popupError);
+          // Si la popup échoue (bloquée par le navigateur, etc.), essayer signInWithRedirect en fallback
+          await signInWithRedirect(auth, provider);
+        }
       }
       
     } catch (error) {
       console.error("Erreur de connexion avec Google:", error);
+      
+      // Nettoyer le timeout
+      if (authTimeoutRef.current) {
+        clearTimeout(authTimeoutRef.current);
+        authTimeoutRef.current = null;
+      }
+      
       setAuthInProgress(false);
       authTriggerRef.current = false;
-      throw error;
+      
+      // Rediriger avec message d'erreur
+      window.location.href = '/login?error=general';
     }
   };
 
@@ -183,22 +229,40 @@ export const FirebaseProvider = ({ children }) => {
         const result = await getRedirectResult(auth);
         console.log("[handleRedirectResult] Résultat de getRedirectResult:", result);
         console.log("[handleRedirectResult] auth.currentUser:", auth.currentUser);
+        
+        // Nettoyer le timeout car nous avons un résultat
+        if (authTimeoutRef.current) {
+          clearTimeout(authTimeoutRef.current);
+          authTimeoutRef.current = null;
+        }
+        
         if (result && result.user) {
-          await handleGoogleAuth(result.user);
-          // Ne pas rediriger ici, laisser l'AuthContext le faire
+          const success = await handleGoogleAuth(result.user);
+          if (success) {
+            window.location.href = '/'; // Rediriger vers la page d'accueil en cas de succès
+          } else {
+            window.location.href = '/login?error=failed';
+          }
         } else if (auth.currentUser) {
           console.log("[handleRedirectResult] Utilisateur déjà connecté via Firebase:", auth.currentUser);
-          await handleGoogleAuth(auth.currentUser);
-          // Ne pas rediriger ici, laisser l'AuthContext le faire
+          const success = await handleGoogleAuth(auth.currentUser);
+          if (success) {
+            window.location.href = '/';
+          }
         }
       } catch (error) {
         console.error("Erreur lors de la récupération du résultat de redirection:", error);
         setAuthInProgress(false);
         authTriggerRef.current = false;
+        
+        // Rediriger avec message d'erreur
+        window.location.href = '/login?error=redirect';
       }
     };
 
-    handleRedirectResult();
+    if (window.location.pathname.includes('/login')) {
+      handleRedirectResult();
+    }
   }, []);
 
   const signOut = async () => {

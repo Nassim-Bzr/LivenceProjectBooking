@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../Context/AuthContext";
 import { useFirebase } from "../Context/FirebaseContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { getAuth, signOut } from "firebase/auth";
 
 export default function Login() {
   const { login, user } = useAuth();
   const { signInWithGoogle } = useFirebase();
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -21,8 +22,48 @@ export default function Login() {
     }
   }, [user, navigate]);
 
+  // Gérer les erreurs provenant des redirections ou du processus de connexion Google
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const errorType = params.get('error');
+    
+    if (errorType) {
+      switch(errorType) {
+        case 'timeout':
+          setError("La connexion avec Google a pris trop de temps. Veuillez réessayer.");
+          break;
+        case 'failed':
+          setError("Échec de la connexion avec Google. Veuillez réessayer ou utiliser une autre méthode.");
+          break;
+        case 'redirect':
+          setError("Erreur lors de la redirection Google. Veuillez réessayer.");
+          break;
+        case 'general':
+          setError("Une erreur s'est produite lors de la connexion avec Google. Veuillez réessayer.");
+          break;
+        default:
+          setError("Erreur de connexion. Veuillez réessayer.");
+      }
+      
+      // Nettoyer l'URL
+      navigate('/login', { replace: true });
+    }
+  }, [location.search, navigate]);
+
   // Au chargement de la page de login, nous nous assurons qu'aucune session Firebase n'est active
-  
+  useEffect(() => {
+    const cleanupFirebaseSession = async () => {
+      try {
+        const auth = getAuth();
+        await signOut(auth);
+        console.log("Session Firebase nettoyée au chargement de la page de login");
+      } catch (e) {
+        console.log("Pas de session Firebase à nettoyer ou erreur:", e);
+      }
+    };
+    
+    cleanupFirebaseSession();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,16 +110,10 @@ export default function Login() {
       // Maintenant on peut procéder à la connexion Google
       await signInWithGoogle();
       
-      // La redirection est gérée par le FirebaseContext
+      // Note: La redirection est maintenant gérée directement dans FirebaseContext
     } catch (error) {
       console.error("Erreur de connexion avec Google:", error);
-      
-      if (error.response) {
-        setError(error.response.data.message || "Problème lors de la connexion avec Google.");
-      } else {
-        setError("Problème lors de la connexion avec Google. Veuillez réessayer.");
-      }
-    } finally {
+      setError("Problème lors de la connexion avec Google. Veuillez réessayer.");
       setLoading(false);
     }
   };
@@ -207,7 +242,7 @@ export default function Login() {
                   d="M12.0004 24.0001C15.2404 24.0001 17.9654 22.935 19.9454 21.095L16.0804 18.095C15.0054 18.82 13.6204 19.245 12.0004 19.245C8.8704 19.245 6.21537 17.135 5.2654 14.29L1.27539 17.385C3.25539 21.31 7.3104 24.0001 12.0004 24.0001Z"
                 />
               </svg>
-              Se connecter avec Google
+              {loading ? "Connexion en cours..." : "Se connecter avec Google"}
             </button>
           </div>
         </div>
