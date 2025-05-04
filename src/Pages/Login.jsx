@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../Context/AuthContext";
 import { useFirebase } from "../Context/FirebaseContext";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { getAuth, signOut } from "firebase/auth";
 
 export default function Login() {
   const { login, user } = useAuth();
@@ -14,17 +13,6 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isRedirectLogin, setIsRedirectLogin] = useState(false);
-
-  // Au début, vérifier si nous sommes dans un processus de redirection Google
-  useEffect(() => {
-    // Si l'URL a un paramètre lié à une redirection Google (soit error, soit code)
-    const params = new URLSearchParams(location.search);
-    if (params.has('error') || params.has('code') || sessionStorage.getItem('googleLoginAttempt')) {
-      console.log("Détection d'un processus de redirection Google en cours");
-      setIsRedirectLogin(true);
-    }
-  }, [location.search]);
 
   // Si l'utilisateur est déjà connecté, rediriger vers la page d'accueil
   useEffect(() => {
@@ -61,28 +49,6 @@ export default function Login() {
     }
   }, [location.search, navigate]);
 
-  // Au chargement de la page de login, nous nous assurons qu'aucune session Firebase n'est active
-  // SAUF si nous sommes dans un processus de redirection
-  useEffect(() => {
-    // Ne pas nettoyer la session si nous sommes dans un processus de redirection Google
-    if (isRedirectLogin) {
-      console.log("Processus de redirection Google détecté, conservation de la session Firebase");
-      return;
-    }
-
-    const cleanupFirebaseSession = async () => {
-      try {
-        const auth = getAuth();
-        await signOut(auth);
-        console.log("Session Firebase nettoyée au chargement de la page de login");
-      } catch (e) {
-        console.log("Pas de session Firebase à nettoyer ou erreur:", e);
-      }
-    };
-    
-    cleanupFirebaseSession();
-  }, [isRedirectLogin]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -116,27 +82,19 @@ export default function Login() {
     try {
       setLoading(true);
       setError("");
+      console.log("Début de la tentative de connexion avec Google");
       
       // Marquer qu'une tentative de connexion Google est en cours
       sessionStorage.setItem('googleLoginAttempt', 'true');
       
-      // On tente une déconnexion Firebase avant la connexion pour éviter les problèmes de session
-      try {
-        const auth = getAuth();
-        await signOut(auth);
-      } catch (e) {
-        console.error("Erreur lors de la déconnexion Firebase préalable:", e);
-      }
-      
-      // Maintenant on peut procéder à la connexion Google
+      // Commencer le processus d'authentification Google
+      // La redirection est gérée par FirebaseContext
       await signInWithGoogle();
-      
-      // Note: La redirection est maintenant gérée directement dans FirebaseContext
     } catch (error) {
-      console.error("Erreur de connexion avec Google:", error);
+      console.error("Erreur lors de la connexion avec Google:", error);
       setError("Problème lors de la connexion avec Google. Veuillez réessayer.");
       setLoading(false);
-      sessionStorage.removeItem('googleLoginAttempt'); // Nettoyer en cas d'erreur
+      sessionStorage.removeItem('googleLoginAttempt');
     }
   };
 
