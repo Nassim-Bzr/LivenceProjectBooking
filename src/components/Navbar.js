@@ -2,13 +2,16 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../Context/AuthContext';
 import { FaChevronDown, FaSignOutAlt, FaEnvelope } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, unreadMessageCount } = useAuth();
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const menuRef = useRef(null);
+  const [activeTab, setActiveTab] = useState('accueil');
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -88,8 +91,13 @@ export default function Navbar() {
             
                 <li className='max-lg:border-b max-lg:py-3 px-3'>
                   <Link to="/messagerie"
-                    className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px] flex items-center'>
-                    <FaEnvelope className="mr-2" /> Messagerie
+                    className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px] flex items-center relative'>
+                    <FaEnvelope className="mr-2" />
+                    {unreadMessageCount > 0 && (
+                      <span className="absolute -top-2 -right-4 bg-rose-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
+                      </span>
+                    )}
                   </Link>
                 </li>
                 {user?.role === 'admin' && (
