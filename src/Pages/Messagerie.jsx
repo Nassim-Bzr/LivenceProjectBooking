@@ -20,8 +20,12 @@ const Messagerie = () => {
   const [appartements, setAppartements] = useState([]);
   const [selectedAppartement, setSelectedAppartement] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState({});
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationData, setNotificationData] = useState({ sender: '', content: '' });
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const notificationAudioRef = useRef(null);
 
   // Rediriger si non connecté
   useEffect(() => {
@@ -127,6 +131,34 @@ const Messagerie = () => {
         if (message.senderId === parseInt(selectedContact.id, 10)) {
           markMessageAsRead(message.id);
         }
+      } else if (message.receiverId === user.id) {
+        // Message pour l'utilisateur courant, mais pas dans la conversation active
+        // Incrémenter le compteur de messages non lus pour ce contact
+        setUnreadMessages(prev => {
+          const contactId = message.senderId.toString();
+          return {
+            ...prev,
+            [contactId]: (prev[contactId] || 0) + 1
+          };
+        });
+
+        // Afficher une notification
+        const sender = contacts.find(c => c.id === message.senderId.toString())?.nom || "Utilisateur";
+        setNotificationData({
+          sender,
+          content: message.contenu.length > 30 ? message.contenu.substring(0, 30) + '...' : message.contenu
+        });
+        setShowNotification(true);
+
+        // Jouer un son de notification
+        if (notificationAudioRef.current) {
+          notificationAudioRef.current.play().catch(e => console.log("Erreur lecture audio:", e));
+        }
+
+        // Cacher la notification après quelques secondes
+        setTimeout(() => {
+          setShowNotification(false);
+        }, 5000);
       } else {
         console.log("Message ignoré car il ne concerne pas la conversation courante");
       }
@@ -186,6 +218,12 @@ const Messagerie = () => {
     if (selectedContact) {
       console.log("Contact sélectionné, chargement des messages:", selectedContact.id);
       fetchMessages(selectedContact.id);
+      
+      // Réinitialiser le compteur de messages non lus pour ce contact lors de la sélection
+      setUnreadMessages(prev => ({
+        ...prev,
+        [selectedContact.id]: 0
+      }));
     }
   }, [selectedContact]);
 
@@ -236,6 +274,46 @@ const Messagerie = () => {
       }
       
       setContacts(contactsList);
+      
+      // Initialiser les compteurs de messages non lus pour chaque contact
+      const initUnreadCounts = async () => {
+        const unreadCountsObj = {};
+        
+        for (const contact of contactsList) {
+          try {
+            // Éviter de compter pour le support par défaut
+            if (contact.isDefault) continue;
+            
+            const contactId = contact.id.toString();
+            // Utiliser l'API de messages existante et filtrer côté client
+            const response = await axios.get(`${API_URL}/messages/utilisateur/${contactId}`, {
+              withCredentials: true,
+              headers: authHeader
+            });
+            
+            // Compter les messages non lus (reçus par l'utilisateur courant et non lus)
+            if (response.data && Array.isArray(response.data)) {
+              const unreadCount = response.data.filter(msg => 
+                msg.receiverId === user.id && 
+                msg.senderId.toString() === contactId && 
+                !msg.lu
+              ).length;
+              
+              if (unreadCount > 0) {
+                unreadCountsObj[contactId] = unreadCount;
+              }
+            }
+          } catch (err) {
+            console.error(`Erreur lors du comptage des messages non lus pour ${contact.id}:`, err);
+          }
+        }
+        
+        setUnreadMessages(unreadCountsObj);
+      };
+      
+      // Appeler la fonction d'initialisation des compteurs
+      initUnreadCounts();
+      
     } catch (err) {
       console.error("Erreur lors du chargement des contacts:", err);
       // Créer un contact admin par défaut en cas d'erreur
@@ -654,22 +732,34 @@ const Messagerie = () => {
                       key={contact.id} 
                       className={`border-b cursor-pointer hover:bg-gray-50 ${
                         selectedContact?.id === contact.id ? 'bg-rose-50' : ''
-                      }`}
+                      } ${unreadMessages[contact.id] ? 'bg-red-50' : ''}`}
                       onClick={() => {
                         setSelectedContact(contact);
                         console.log('setSelectedContact (click) appelé avec', contact);
+                        // Réinitialiser le compteur de messages non lus pour ce contact
+                        setUnreadMessages(prev => ({
+                          ...prev,
+                          [contact.id]: 0
+                        }));
                       }}
                     >
-                      <div className="flex items-center p-4">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                          <FaUser className="text-gray-500" />
-                        </div>
-                        <div>
-                          <div className="font-medium">{contact.nom}</div>
-                          <div className="text-sm text-gray-500">
-                            {contact.role === "admin" ? "Support" : "Client"}
+                      <div className="flex items-center justify-between p-4">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                            <FaUser className="text-gray-500" />
+                          </div>
+                          <div>
+                            <div className="font-medium">{contact.nom}</div>
+                            <div className="text-sm text-gray-500">
+                              {contact.role === "admin" ? "Support" : "Client"}
+                            </div>
                           </div>
                         </div>
+                        {unreadMessages[contact.id] > 0 && (
+                          <div className="flex-shrink-0 bg-rose-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium">
+                            {unreadMessages[contact.id]}
+                          </div>
+                        )}
                       </div>
                     </li>
                   ))}
@@ -745,8 +835,6 @@ const Messagerie = () => {
                   )}
                 </div>
 
-              
-
                 {/* Formulaire d'envoi */}
                 <form onSubmit={handleSendMessage} className="p-4 border-t flex">
                   <input
@@ -772,6 +860,77 @@ const Messagerie = () => {
           </div>
         </div>
       </div>
+
+      {/* Son de notification */}
+      <audio ref={notificationAudioRef} preload="auto">
+        <source src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=notification-sound-7062.mp3" type="audio/mp3" />
+      </audio>
+      
+      {/* Notification de message */}
+      {showNotification && (
+        <div 
+          className="fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 max-w-sm z-50 border-l-4 border-rose-500 animate-slideIn cursor-pointer"
+          onClick={() => {
+            // Trouver le contact associé à la notification et le sélectionner
+            const notificationContactId = contacts.find(c => c.nom === notificationData.sender)?.id;
+            if (notificationContactId) {
+              const contact = contacts.find(c => c.id === notificationContactId);
+              if (contact) {
+                setSelectedContact(contact);
+                // Réinitialiser le compteur pour ce contact
+                setUnreadMessages(prev => ({
+                  ...prev,
+                  [notificationContactId]: 0
+                }));
+                setShowNotification(false);
+              }
+            }
+          }}
+        >
+          <div className="flex items-start">
+            <div className="flex-shrink-0 pt-0.5">
+              <div className="h-10 w-10 rounded-full bg-rose-100 flex items-center justify-center">
+                <FaUser className="text-rose-500" />
+              </div>
+            </div>
+            <div className="ml-3 w-0 flex-1">
+              <p className="text-sm font-medium text-gray-900">
+                {notificationData.sender}
+              </p>
+              <p className="mt-1 text-sm text-gray-500">
+                {notificationData.content}
+              </p>
+              <p className="mt-1 text-xs text-rose-500">
+                Cliquez pour voir le message
+              </p>
+            </div>
+            <div className="ml-4 flex-shrink-0 flex">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation(); // Empêcher le clic de se propager
+                  setShowNotification(false);
+                }}
+                className="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500"
+              >
+                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <style jsx>{`
+        @keyframes slideIn {
+          0% { transform: translateX(100%); opacity: 0; }
+          100% { transform: translateX(0); opacity: 1; }
+        }
+        
+        .animate-slideIn {
+          animation: slideIn 0.3s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 };
