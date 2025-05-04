@@ -1,5 +1,5 @@
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://livence-ef9188d2aef0.herokuapp.com' 
+  ? 'https://livenc-app-bc6db42f80d2.herokuapp.com' 
   : 'http://localhost:5000';
 
 export const API_URL = `${API_BASE_URL}/api`;

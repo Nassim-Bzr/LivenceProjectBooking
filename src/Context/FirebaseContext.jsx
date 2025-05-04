@@ -88,7 +88,7 @@ export const FirebaseProvider = ({ children }) => {
       console.log("Envoi des données au backend avec email:", user.email);
       
       // Envoyer les infos au backend
-      const response = await axios.post('https://livence-ef9188d2aef0.herokuapp.com/api/auth/google', {
+      const response = await axios.post('https://livenc-app-bc6db42f80d2.herokuapp.com/api/auth/google', {
         email: user.email,
         nom: user.displayName,
         googleId: user.uid,
