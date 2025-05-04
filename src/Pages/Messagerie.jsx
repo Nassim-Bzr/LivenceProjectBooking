@@ -829,8 +829,8 @@ const Messagerie = () => {
                                   ? message.error 
                                     ? 'bg-red-100 text-red-800 border border-red-300' 
                                     : message.isTemp 
-                                      ? 'bg-[#ade8f4] text-white border border-rose-200' 
-                                      : 'bg-[#ade8f4] text-white'
+                                      ? 'bg-[#ade8f4] text-gray-800 border border-rose-200' 
+                                      : 'bg-[#ade8f4] text-gray-800'
                                   : 'bg-gray-200 text-gray-800'
                               }`}
                             >
