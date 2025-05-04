@@ -135,8 +135,8 @@ export default function Navbar() {
                   <Link to="/messagerie"
                     className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px] flex items-center relative'>
                       Messagerie
-                      
-                    <FaEnvelope className="mr-2" />
+
+                    
                     {unreadMessageCount > 0 && (
                       <span className="absolute -top-2 -right-4 bg-rose-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                         {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
