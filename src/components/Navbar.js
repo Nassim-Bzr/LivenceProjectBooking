@@ -17,6 +17,36 @@ export default function Navbar() {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  // Obtenir l'initiale du nom d'utilisateur
+  const getUserInitial = () => {
+    if (!user || !user.name) return "U";
+    return user.name.charAt(0).toUpperCase();
+  };
+
+  // Générer une couleur de fond basée sur le nom d'utilisateur (pour que la même personne ait toujours la même couleur)
+  const getInitialBackgroundColor = () => {
+    if (!user || !user.name) return "#6366f1"; // Indigo par défaut
+    
+    // Générer une couleur basée sur le nom
+    const colors = [
+      "#ef4444", // Rouge
+      "#f97316", // Orange
+      "#f59e0b", // Ambre
+      "#84cc16", // Citron vert
+      "#10b981", // Émeraude
+      "#06b6d4", // Cyan
+      "#3b82f6", // Bleu
+      "#6366f1", // Indigo
+      "#8b5cf6", // Violet
+      "#d946ef", // Fuchsia
+      "#ec4899", // Rose
+    ];
+    
+    // Utiliser une somme simple des codes de caractères pour déterminer l'index de couleur
+    const charSum = user.name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return colors[charSum % colors.length];
+  };
+
   // Fermer le menu quand on clique en dehors
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -42,6 +72,40 @@ export default function Navbar() {
       setIsMenuOpen(false);
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error);
+    }
+  };
+
+  // Rendu conditionnel de l'avatar (photo ou initiale)
+  const renderAvatar = () => {
+    if (user?.photo) {
+      return (
+        <img 
+          src={user.photo} 
+          alt={`Photo de ${user.name || 'profil'}`} 
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.onerror = null;
+            // En cas d'erreur de chargement d'image, afficher l'initiale à la place
+            e.target.style.display = 'none';
+            e.target.parentNode.classList.add('flex', 'items-center', 'justify-center');
+            e.target.parentNode.style.backgroundColor = getInitialBackgroundColor();
+            const initialElement = document.createElement('span');
+            initialElement.textContent = getUserInitial();
+            initialElement.className = 'text-white font-medium text-lg';
+            e.target.parentNode.appendChild(initialElement);
+          }}
+        />
+      );
+    } else {
+      // Si pas de photo, afficher l'initiale
+      return (
+        <div 
+          className="w-full h-full flex items-center justify-center"
+          style={{ backgroundColor: getInitialBackgroundColor() }}
+        >
+          <span className="text-white font-medium text-lg">{getUserInitial()}</span>
+        </div>
+      );
     }
   };
 
@@ -160,14 +224,7 @@ export default function Navbar() {
               </Link>
               <Link to="/profile" className="flex items-center">
                 <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 mr-2 border border-gray-300">
-                  <img 
-                    src={user.photo || ""} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src = "";
-                    }}
-                  />
+                  {renderAvatar()}
                 </div>
               </Link>
               

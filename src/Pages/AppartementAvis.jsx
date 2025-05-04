@@ -9,6 +9,70 @@ const AppartementAvis = () => {
   const [avis, setAvis] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Obtenir l'initiale du nom d'un utilisateur
+  const getUserInitial = (name) => {
+    if (!name) return "U";
+    return name.charAt(0).toUpperCase();
+  };
+
+  // Générer une couleur de fond basée sur le nom d'utilisateur
+  const getInitialBackgroundColor = (name) => {
+    if (!name) return "#6366f1"; // Indigo par défaut
+    
+    // Générer une couleur basée sur le nom
+    const colors = [
+      "#ef4444", // Rouge
+      "#f97316", // Orange
+      "#f59e0b", // Ambre
+      "#84cc16", // Citron vert
+      "#10b981", // Émeraude
+      "#06b6d4", // Cyan
+      "#3b82f6", // Bleu
+      "#6366f1", // Indigo
+      "#8b5cf6", // Violet
+      "#d946ef", // Fuchsia
+      "#ec4899", // Rose
+    ];
+    
+    // Utiliser une somme simple des codes de caractères pour déterminer l'index de couleur
+    const charSum = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return colors[charSum % colors.length];
+  };
+
+  // Rendu conditionnel de l'avatar (photo ou initiale)
+  const renderAvatar = (user) => {
+    if (user?.avatar) {
+      return (
+        <img 
+          src={user.avatar} 
+          alt={`Photo de ${user.userName || 'l\'utilisateur'}`} 
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.onerror = null;
+            // En cas d'erreur de chargement d'image, afficher l'initiale à la place
+            e.target.style.display = 'none';
+            e.target.parentNode.classList.add('flex', 'items-center', 'justify-center');
+            e.target.parentNode.style.backgroundColor = getInitialBackgroundColor(user.userName);
+            const initialElement = document.createElement('span');
+            initialElement.textContent = getUserInitial(user.userName);
+            initialElement.className = 'text-white font-medium';
+            e.target.parentNode.appendChild(initialElement);
+          }}
+        />
+      );
+    } else {
+      // Si pas de photo, afficher l'initiale
+      return (
+        <div 
+          className="w-full h-full flex items-center justify-center"
+          style={{ backgroundColor: getInitialBackgroundColor(user.userName) }}
+        >
+          <span className="text-white font-medium">{getUserInitial(user.userName)}</span>
+        </div>
+      );
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -172,11 +236,9 @@ const AppartementAvis = () => {
                 {avis.map((review) => (
                   <div key={review.id} className="border-b pb-6">
                     <div className="flex items-start">
-                      <img 
-                        src={review.avatar} 
-                        alt={review.userName} 
-                        className="w-12 h-12 rounded-full mr-4" 
-                      />
+                      <div className="w-12 h-12 rounded-full overflow-hidden mr-4">
+                        {renderAvatar(review)}
+                      </div>
                       <div>
                         <div className="font-medium">{review.userName}</div>
                         <div className="text-gray-500 text-sm mb-2">{formatDate(review.date)}</div>

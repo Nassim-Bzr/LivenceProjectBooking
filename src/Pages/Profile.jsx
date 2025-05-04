@@ -22,6 +22,69 @@ const Profile = () => {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Obtenir l'initiale du nom d'utilisateur
+  const getUserInitial = () => {
+    if (!user || !user.name) return "U";
+    return user.name.charAt(0).toUpperCase();
+  };
+
+  // Générer une couleur de fond basée sur le nom d'utilisateur
+  const getInitialBackgroundColor = () => {
+    if (!user || !user.name) return "#6366f1"; // Indigo par défaut
+    
+    // Générer une couleur basée sur le nom
+    const colors = [
+      "#ef4444", // Rouge
+      "#f97316", // Orange
+      "#f59e0b", // Ambre
+      "#84cc16", // Citron vert
+      "#10b981", // Émeraude
+      "#06b6d4", // Cyan
+      "#3b82f6", // Bleu
+      "#6366f1", // Indigo
+      "#8b5cf6", // Violet
+      "#d946ef", // Fuchsia
+      "#ec4899", // Rose
+    ];
+    
+    // Utiliser une somme simple des codes de caractères pour déterminer l'index de couleur
+    const charSum = user.name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return colors[charSum % colors.length];
+  };
+
+  // Rendu conditionnel de l'avatar (photo ou initiale)
+  const renderAvatar = () => {
+    if (user?.photo || formData.avatar) {
+      return (
+        <img 
+          src={user?.photo || formData.avatar} 
+          alt="Photo de profil" 
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.style.display = 'none';
+            e.target.parentNode.classList.add('flex', 'items-center', 'justify-center');
+            e.target.parentNode.style.backgroundColor = getInitialBackgroundColor();
+            const initialElement = document.createElement('span');
+            initialElement.textContent = getUserInitial();
+            initialElement.className = 'text-white font-bold text-4xl';
+            e.target.parentNode.appendChild(initialElement);
+          }}
+        />
+      );
+    } else {
+      // Si pas de photo, afficher l'initiale
+      return (
+        <div 
+          className="w-full h-full flex items-center justify-center"
+          style={{ backgroundColor: getInitialBackgroundColor() }}
+        >
+          <span className="text-white font-bold text-4xl">{getUserInitial()}</span>
+        </div>
+      );
+    }
+  };
+
   useEffect(() => {
     if (user) {
       console.log("Données utilisateur dans Profile:", user);
@@ -121,15 +184,7 @@ const Profile = () => {
             <div className="text-center mb-8">
               <div className="relative w-40 h-40 mx-auto mb-6">
                 <div className="w-full h-full rounded-full overflow-hidden ring-4 ring-blue-100">
-                  <img 
-                    src={user?.photo || formData.avatar || "https://via.placeholder.com/150"} 
-                    alt="Photo de profil" 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null; // Prevent infinite loop
-                      e.target.src = "https://via.placeholder.com/150";
-                    }}
-                  />
+                  {renderAvatar()}
                 </div>
                 <label className="absolute bottom-2 right-2 bg-blue-600 p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors">
                   <FaUpload className="text-white" />

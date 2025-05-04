@@ -28,6 +28,70 @@ const Messagerie = () => {
   const typingTimeoutRef = useRef(null);
   const notificationAudioRef = useRef(null);
 
+  // Obtenir l'initiale du nom d'un utilisateur
+  const getUserInitial = (name) => {
+    if (!name) return "U";
+    return name.charAt(0).toUpperCase();
+  };
+
+  // Générer une couleur de fond basée sur le nom d'utilisateur
+  const getInitialBackgroundColor = (name) => {
+    if (!name) return "#6366f1"; // Indigo par défaut
+    
+    // Générer une couleur basée sur le nom
+    const colors = [
+      "#ef4444", // Rouge
+      "#f97316", // Orange
+      "#f59e0b", // Ambre
+      "#84cc16", // Citron vert
+      "#10b981", // Émeraude
+      "#06b6d4", // Cyan
+      "#3b82f6", // Bleu
+      "#6366f1", // Indigo
+      "#8b5cf6", // Violet
+      "#d946ef", // Fuchsia
+      "#ec4899", // Rose
+    ];
+    
+    // Utiliser une somme simple des codes de caractères pour déterminer l'index de couleur
+    const charSum = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return colors[charSum % colors.length];
+  };
+
+  // Rendu conditionnel de l'avatar (photo ou initiale)
+  const renderAvatar = (contact) => {
+    if (contact?.photo) {
+      return (
+        <img 
+          src={contact.photo} 
+          alt={`Photo de ${contact.nom || 'contact'}`} 
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.onerror = null;
+            // En cas d'erreur de chargement d'image, afficher l'initiale à la place
+            e.target.style.display = 'none';
+            e.target.parentNode.classList.add('flex', 'items-center', 'justify-center');
+            e.target.parentNode.style.backgroundColor = getInitialBackgroundColor(contact.nom);
+            const initialElement = document.createElement('span');
+            initialElement.textContent = getUserInitial(contact.nom);
+            initialElement.className = 'text-white font-medium';
+            e.target.parentNode.appendChild(initialElement);
+          }}
+        />
+      );
+    } else {
+      // Si pas de photo, afficher l'initiale
+      return (
+        <div 
+          className="w-full h-full flex items-center justify-center"
+          style={{ backgroundColor: getInitialBackgroundColor(contact.nom) }}
+        >
+          <span className="text-white font-medium">{getUserInitial(contact.nom)}</span>
+        </div>
+      );
+    }
+  };
+
   // Rediriger si non connecté
   useEffect(() => {
     if (!user) {
@@ -766,8 +830,8 @@ const Messagerie = () => {
                     >
                       <div className="flex items-center justify-between p-4">
                         <div className="flex items-center">
-                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                            <FaUser className="text-gray-500" />
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3 overflow-hidden">
+                            {renderAvatar(contact)}
                           </div>
                           <div>
                             <div className="font-medium">{contact.nom}</div>
@@ -795,8 +859,8 @@ const Messagerie = () => {
               <>
                 {/* En-tête de la conversation */}
                 <div className="border-b p-4 flex items-center">
-                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                    <FaUser className="text-gray-500" />
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3 overflow-hidden">
+                    {renderAvatar(selectedContact)}
                   </div>
                   <div>
                     <div className="font-medium">{selectedContact.nom}</div>
@@ -959,8 +1023,18 @@ const Messagerie = () => {
         >
           <div className="flex items-start">
             <div className="flex-shrink-0 pt-0.5">
-              <div className="h-10 w-10 rounded-full bg-rose-100 flex items-center justify-center">
-                <FaUser className="text-rose-500" />
+              <div className="h-10 w-10 rounded-full overflow-hidden">
+                {(() => {
+                  const sender = contacts.find(c => c.nom === notificationData.sender);
+                  return sender ? renderAvatar(sender) : (
+                    <div 
+                      className="w-full h-full flex items-center justify-center"
+                      style={{ backgroundColor: getInitialBackgroundColor(notificationData.sender) }}
+                    >
+                      <span className="text-white font-medium">{getUserInitial(notificationData.sender)}</span>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
             <div className="ml-3 w-0 flex-1">
