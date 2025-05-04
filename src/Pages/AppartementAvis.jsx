@@ -17,26 +17,7 @@ const AppartementAvis = () => {
 
   // Générer une couleur de fond basée sur le nom d'utilisateur
   const getInitialBackgroundColor = (name) => {
-    if (!name) return "#6366f1"; // Indigo par défaut
-    
-    // Générer une couleur basée sur le nom
-    const colors = [
-      "#ef4444", // Rouge
-      "#f97316", // Orange
-      "#f59e0b", // Ambre
-      "#84cc16", // Citron vert
-      "#10b981", // Émeraude
-      "#06b6d4", // Cyan
-      "#3b82f6", // Bleu
-      "#6366f1", // Indigo
-      "#8b5cf6", // Violet
-      "#d946ef", // Fuchsia
-      "#ec4899", // Rose
-    ];
-    
-    // Utiliser une somme simple des codes de caractères pour déterminer l'index de couleur
-    const charSum = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    return colors[charSum % colors.length];
+    return "#1E40AF"; // Bleu foncé pour tous les avatars
   };
 
   // Rendu conditionnel de l'avatar (photo ou initiale)

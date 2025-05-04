@@ -25,26 +25,7 @@ export default function Navbar() {
 
   // Générer une couleur de fond basée sur le nom d'utilisateur (pour que la même personne ait toujours la même couleur)
   const getInitialBackgroundColor = () => {
-    if (!user || !user.name) return "#6366f1"; // Indigo par défaut
-    
-    // Générer une couleur basée sur le nom
-    const colors = [
-      "#ef4444", // Rouge
-      "#f97316", // Orange
-      "#f59e0b", // Ambre
-      "#84cc16", // Citron vert
-      "#10b981", // Émeraude
-      "#06b6d4", // Cyan
-      "#3b82f6", // Bleu
-      "#6366f1", // Indigo
-      "#8b5cf6", // Violet
-      "#d946ef", // Fuchsia
-      "#ec4899", // Rose
-    ];
-    
-    // Utiliser une somme simple des codes de caractères pour déterminer l'index de couleur
-    const charSum = user.name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    return colors[charSum % colors.length];
+    return "#1E40AF"; // Bleu foncé pour tous les avatars
   };
 
   // Fermer le menu quand on clique en dehors
@@ -146,16 +127,15 @@ export default function Navbar() {
               <Link to="/"
                 className='font-medium lg:hover:text-blue-700 text-blue-700 block text-[15px]'>Accueil</Link>
             </li>
-            <li className='max-lg:border-b max-lg:py-3 px-3'>
-              <Link to="/proprietaires"
-                className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px]'>Propriétaires</Link>
-            </li>
+        
             {user ? (
               <>
             
                 <li className='max-lg:border-b max-lg:py-3 px-3'>
                   <Link to="/messagerie"
                     className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px] flex items-center relative'>
+                      Messagerie
+                      
                     <FaEnvelope className="mr-2" />
                     {unreadMessageCount > 0 && (
                       <span className="absolute -top-2 -right-4 bg-rose-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
