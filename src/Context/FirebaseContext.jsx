@@ -148,9 +148,13 @@ export const FirebaseProvider = ({ children }) => {
   }, [user, authInProgress]);
 
   const signInWithGoogle = async () => {
-    if (authInProgress) return;
+    if (authInProgress) {
+      console.log("Une authentification est déjà en cours, ignoré");
+      return;
+    }
     
     try {
+      console.log("Début du processus de connexion Google");
       setAuthInProgress(true);
       authTriggerRef.current = true; // Marquer cette authentification comme intentionnelle
       
@@ -159,13 +163,22 @@ export const FirebaseProvider = ({ children }) => {
         console.log("Timeout d'authentification Google atteint, réinitialisation");
         setAuthInProgress(false);
         authTriggerRef.current = false;
+        sessionStorage.removeItem('googleLoginAttempt');
         // Rediriger vers la page de login avec un message d'erreur
         window.location.href = '/login?error=timeout';
       }, 30000); // 30 secondes
       
       // Essayer de déconnecter l'utilisateur précédent au cas où
       try {
+        console.log("Tentative de déconnexion de l'utilisateur Firebase actuel");
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          console.log("Utilisateur Firebase actuel trouvé:", currentUser.email);
+        } else {
+          console.log("Aucun utilisateur Firebase actuellement connecté");
+        }
         await firebaseSignOut(auth);
+        console.log("Déconnexion Firebase réussie");
       } catch (e) {
         // Ignorer les erreurs, nous voulons juste être sûrs qu'il n'y a pas de session
         console.log("Erreur lors de la déconnexion Firebase:", e);
@@ -176,7 +189,16 @@ export const FirebaseProvider = ({ children }) => {
       
       if (isMobile) {
         console.log("Appareil mobile détecté, utilisation de signInWithRedirect");
-        await signInWithRedirect(auth, provider);
+        // Sur mobile, utilisons uniquement signInWithRedirect qui est plus fiable
+        try {
+          console.log("Redirection vers l'authentification Google...");
+          await signInWithRedirect(auth, provider);
+          // Ce code ne sera pas exécuté immédiatement car la redirection aura lieu
+          console.log("Ce log ne devrait pas apparaître après une redirection");
+        } catch (redirectError) {
+          console.error("Erreur lors de la redirection:", redirectError);
+          throw redirectError; // Propager l'erreur
+        }
       } else {
         // Sur desktop, essayer d'abord popup, puis redirection si la popup échoue
         try {
@@ -191,17 +213,41 @@ export const FirebaseProvider = ({ children }) => {
           }
           
           if (result && result.user) {
+            console.log("Utilisateur Google authentifié avec popup:", result.user.email);
             const success = await handleGoogleAuth(result.user);
             if (success) {
+              console.log("Authentification backend réussie, redirection vers la page d'accueil");
+              sessionStorage.removeItem('googleLoginAttempt');
               window.location.href = '/'; // Rediriger vers la page d'accueil en cas de succès
             } else {
+              console.error("Échec de l'authentification backend");
+              sessionStorage.removeItem('googleLoginAttempt');
               window.location.href = '/login?error=failed';
             }
+          } else {
+            console.log("La popup a retourné un résultat sans utilisateur");
+            sessionStorage.removeItem('googleLoginAttempt');
           }
         } catch (popupError) {
           console.log("Erreur avec popup, tentative de fallback avec redirect:", popupError);
-          // Si la popup échoue (bloquée par le navigateur, etc.), essayer signInWithRedirect en fallback
-          await signInWithRedirect(auth, provider);
+          
+          if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
+            console.log("Popup bloquée ou fermée, utilisation de la redirection comme fallback");
+            // Si la popup échoue (bloquée par le navigateur, etc.), essayer signInWithRedirect en fallback
+            try {
+              console.log("Redirection vers l'authentification Google...");
+              await signInWithRedirect(auth, provider);
+              // Ce code ne sera pas exécuté immédiatement car la redirection aura lieu
+              console.log("Ce log ne devrait pas apparaître après une redirection");
+            } catch (redirectError) {
+              console.error("Erreur lors de la redirection:", redirectError);
+              throw redirectError; // Propager l'erreur
+            }
+          } else {
+            // Autre erreur avec la popup
+            console.error("Erreur non récupérable avec la popup:", popupError);
+            throw popupError;
+          }
         }
       }
       
@@ -216,6 +262,7 @@ export const FirebaseProvider = ({ children }) => {
       
       setAuthInProgress(false);
       authTriggerRef.current = false;
+      sessionStorage.removeItem('googleLoginAttempt');
       
       // Rediriger avec message d'erreur
       window.location.href = '/login?error=general';
@@ -239,21 +286,37 @@ export const FirebaseProvider = ({ children }) => {
         if (result && result.user) {
           const success = await handleGoogleAuth(result.user);
           if (success) {
+            // Nettoyer le drapeau de tentative de connexion
+            sessionStorage.removeItem('googleLoginAttempt');
             window.location.href = '/'; // Rediriger vers la page d'accueil en cas de succès
           } else {
+            // Nettoyer le drapeau de tentative de connexion
+            sessionStorage.removeItem('googleLoginAttempt');
             window.location.href = '/login?error=failed';
           }
         } else if (auth.currentUser) {
           console.log("[handleRedirectResult] Utilisateur déjà connecté via Firebase:", auth.currentUser);
           const success = await handleGoogleAuth(auth.currentUser);
           if (success) {
+            // Nettoyer le drapeau de tentative de connexion
+            sessionStorage.removeItem('googleLoginAttempt');
             window.location.href = '/';
+          } else {
+            // Nettoyer le drapeau de tentative de connexion
+            sessionStorage.removeItem('googleLoginAttempt');
+            window.location.href = '/login?error=failed';
           }
+        } else {
+          console.log("[handleRedirectResult] Aucun utilisateur trouvé après redirection");
+          sessionStorage.removeItem('googleLoginAttempt');
         }
       } catch (error) {
         console.error("Erreur lors de la récupération du résultat de redirection:", error);
         setAuthInProgress(false);
         authTriggerRef.current = false;
+        
+        // Nettoyer le drapeau de tentative de connexion
+        sessionStorage.removeItem('googleLoginAttempt');
         
         // Rediriger avec message d'erreur
         window.location.href = '/login?error=redirect';

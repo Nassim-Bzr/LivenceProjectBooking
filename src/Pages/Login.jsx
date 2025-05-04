@@ -14,6 +14,17 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isRedirectLogin, setIsRedirectLogin] = useState(false);
+
+  // Au début, vérifier si nous sommes dans un processus de redirection Google
+  useEffect(() => {
+    // Si l'URL a un paramètre lié à une redirection Google (soit error, soit code)
+    const params = new URLSearchParams(location.search);
+    if (params.has('error') || params.has('code') || sessionStorage.getItem('googleLoginAttempt')) {
+      console.log("Détection d'un processus de redirection Google en cours");
+      setIsRedirectLogin(true);
+    }
+  }, [location.search]);
 
   // Si l'utilisateur est déjà connecté, rediriger vers la page d'accueil
   useEffect(() => {
@@ -51,7 +62,14 @@ export default function Login() {
   }, [location.search, navigate]);
 
   // Au chargement de la page de login, nous nous assurons qu'aucune session Firebase n'est active
+  // SAUF si nous sommes dans un processus de redirection
   useEffect(() => {
+    // Ne pas nettoyer la session si nous sommes dans un processus de redirection Google
+    if (isRedirectLogin) {
+      console.log("Processus de redirection Google détecté, conservation de la session Firebase");
+      return;
+    }
+
     const cleanupFirebaseSession = async () => {
       try {
         const auth = getAuth();
@@ -63,7 +81,7 @@ export default function Login() {
     };
     
     cleanupFirebaseSession();
-  }, []);
+  }, [isRedirectLogin]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -99,6 +117,9 @@ export default function Login() {
       setLoading(true);
       setError("");
       
+      // Marquer qu'une tentative de connexion Google est en cours
+      sessionStorage.setItem('googleLoginAttempt', 'true');
+      
       // On tente une déconnexion Firebase avant la connexion pour éviter les problèmes de session
       try {
         const auth = getAuth();
@@ -115,6 +136,7 @@ export default function Login() {
       console.error("Erreur de connexion avec Google:", error);
       setError("Problème lors de la connexion avec Google. Veuillez réessayer.");
       setLoading(false);
+      sessionStorage.removeItem('googleLoginAttempt'); // Nettoyer en cas d'erreur
     }
   };
 
