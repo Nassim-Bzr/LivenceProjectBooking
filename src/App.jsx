@@ -14,6 +14,8 @@ import CheckoutReservation from './Pages/CheckoutReservation';
 import ReservationDetails from './Pages/ReservationDetails';
 import AddAppartement from './Pages/Admin/AddAppartement';
 import AdminReservations from './Pages/Admin/Reservations';
+import AboutUs from './Pages/AboutUs';
+import FAQ from './Pages/FAQ';
 import io from 'socket.io-client';
 import { SOCKET_URL } from './config/api';
 
@@ -92,6 +94,8 @@ const AppWithNotifications = () => {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/faq" element={<FAQ />} />
         <Route path="/appartement/:slug" element={<AppartementDetails />} />
         <Route path="/appartement/:slug/avis" element={<AvisAppartement />} />
         <Route path="/appartement/:slug/checkout" element={<CheckoutReservation />} />

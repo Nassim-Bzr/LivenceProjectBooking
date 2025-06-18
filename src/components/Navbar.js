@@ -127,6 +127,14 @@ export default function Navbar() {
               <Link to="/"
                 className='font-medium lg:hover:text-blue-700 text-blue-700 block text-[15px]'>Accueil</Link>
             </li>
+            <li className='max-lg:border-b max-lg:py-3 px-3'>
+              <Link to="/about"
+                className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px]'>À propos</Link>
+            </li>
+            <li className='max-lg:border-b max-lg:py-3 px-3'>
+              <Link to="/faq"
+                className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px]'>FAQ</Link>
+            </li>
         
             {user ? (
               <>
