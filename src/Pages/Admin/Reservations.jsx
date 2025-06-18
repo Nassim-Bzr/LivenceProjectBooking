@@ -32,7 +32,7 @@ const AdminReservations = () => {
       try {
         // Utiliser l'URL correcte pour récupérer toutes les réservations en tant qu'admin
         const response = await axios.get(
-          "http://localhost:5000/api/reservations/all",
+          "https://livenc-app-bc6db42f80d2.herokuapp.com/api/reservations/all",
           { withCredentials: true }
         );
         
@@ -55,7 +55,7 @@ const AdminReservations = () => {
         try {
           console.log("Tentative de récupération avec l'endpoint de fallback...");
           const fallbackResponse = await axios.get(
-            "http://localhost:5000/api/reservations/user",
+            "https://livenc-app-bc6db42f80d2.herokuapp.com/api/reservations/user",
             { withCredentials: true }
           );
           
@@ -86,7 +86,7 @@ const AdminReservations = () => {
       const requestData = { status: newStatus };
       
       const response = await axios.put(
-        `http://localhost:5000/api/reservations/${reservationId}/status`,
+        `https://livenc-app-bc6db42f80d2.herokuapp.com/api/reservations/${reservationId}/status`,
         requestData,
         { 
           withCredentials: true,
@@ -132,7 +132,7 @@ const AdminReservations = () => {
     
     try {
       await axios.delete(
-        `http://localhost:5000/api/reservations/${reservationId}`,
+        `https://livenc-app-bc6db42f80d2.herokuapp.com/api/reservations/${reservationId}`,
         { withCredentials: true }
       );
       
@@ -152,7 +152,7 @@ const AdminReservations = () => {
     try {
       // Utiliser le même endpoint que lors du chargement initial
       const response = await axios.get(
-        "http://localhost:5000/api/reservations/all",
+        "https://livenc-app-bc6db42f80d2.herokuapp.com/api/reservations/all",
         { withCredentials: true }
       );
       
@@ -165,7 +165,7 @@ const AdminReservations = () => {
       try {
         console.log("Tentative de rafraîchissement avec l'endpoint de fallback...");
         const fallbackResponse = await axios.get(
-          "http://localhost:5000/api/reservations/user",
+            "https://livenc-app-bc6db42f80d2.herokuapp.com/api/reservations/user",
           { withCredentials: true }
         );
         

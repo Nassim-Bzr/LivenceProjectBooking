@@ -259,7 +259,7 @@ const AddAppartement = () => {
           }
           
           // Envoyer les données à l'API
-          const response = await fetch('http://localhost:5000/api/appartements', {
+          const response = await fetch('https://livenc-app-bc6db42f80d2.herokuapp.com/api/appartements', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -291,7 +291,7 @@ const AddAppartement = () => {
           
           // Vider le cache de l'API pour les requêtes des appartements
           try {
-            await fetch('http://localhost:5000/api/appartements', {
+            await fetch('https://livenc-app-bc6db42f80d2.herokuapp.com/api/appartements', {
               method: 'GET',
               headers: {
                 'Cache-Control': 'no-cache',

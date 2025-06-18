@@ -44,8 +44,8 @@ const ClientProfile = () => {
         let clientInfo;
         try {
           // Essayer d'abord de récupérer l'utilisateur par son ID
-          console.log("Tentative de récupération du client à l'URL:", `http://localhost:5000/users/${userId}`);
-          const response = await axios.get(`http://localhost:5000/users/${userId}`, { 
+          console.log("Tentative de récupération du client à l'URL:", `https://livenc-app-bc6db42f80d2.herokuapp.com/api/users/${userId}`);
+          const response = await axios.get(`https://livenc-app-bc6db42f80d2.herokuapp.com/api/users/${userId}`, { 
             withCredentials: true,
             headers: authHeader 
           });
@@ -57,7 +57,7 @@ const ClientProfile = () => {
           // Essayons de récupérer l'utilisateur depuis les réservations
           try {
             console.log("Tentative de récupération des réservations pour trouver les informations utilisateur");
-            const allReservationsResponse = await axios.get("http://localhost:5000/reservations/all", { 
+            const allReservationsResponse = await axios.get("https://livenc-app-bc6db42f80d2.herokuapp.com/api/reservations/all", { 
               withCredentials: true,
               headers: authHeader 
             });
@@ -115,7 +115,7 @@ const ClientProfile = () => {
         try {
           // Utiliser l'endpoint spécifique pour les réservations d'un client
           console.log("Récupération des réservations du client");
-          const userReservationsResponse = await axios.get("http://localhost:5000/reservations/user", { 
+          const userReservationsResponse = await axios.get("https://livenc-app-bc6db42f80d2.herokuapp.com/api/reservations/user", { 
             withCredentials: true,
             headers: authHeader 
           });
@@ -143,7 +143,7 @@ const ClientProfile = () => {
     if (!user || !clientData) return;
 
     // Connexion à socket.io
-    const newSocket = io("http://localhost:5000");
+    const newSocket = io("https://livenc-app-bc6db42f80d2.herokuapp.com");
     setSocket(newSocket);
 
     // Authentification avec le token JWT
@@ -219,7 +219,7 @@ const ClientProfile = () => {
     const fetchMessages = async (headers = {}) => {
       setLoadingMessages(true);
       try {
-        const response = await axios.get(`http://localhost:5000/api/messages/utilisateur/${userId}`, {
+        const response = await axios.get(`https://livenc-app-bc6db42f80d2.herokuapp.com/api/messages/utilisateur/${userId}`, {
           withCredentials: true,
           headers
         });
@@ -248,7 +248,7 @@ const ClientProfile = () => {
           
           // Requête pour marquer les messages comme lus
           try {
-            await axios.post(`http://localhost:5000/api/messages/marquer-lus`, {
+            await axios.post(`https://livenc-app-bc6db42f80d2.herokuapp.com/api/messages/marquer-lus`, {
               messageIds: unreadMessages.map(msg => msg.id)
             }, {
               withCredentials: true,
@@ -336,7 +336,7 @@ const ClientProfile = () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
       
-      const response = await axios.post("http://localhost:5000/api/messages/envoyer", {
+      const response = await axios.post("https://livenc-app-bc6db42f80d2.herokuapp.com/api/messages/envoyer", {
         receiverId,
         contenu: newMessage,
         type: "general"
@@ -472,7 +472,7 @@ const ClientProfile = () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
       
-      await axios.post(`http://localhost:5000/api/messages/marquer-lus`, {
+      await axios.post(`https://livenc-app-bc6db42f80d2.herokuapp.com/api/messages/marquer-lus`, {
         messageIds: [messageId]
       }, {
         withCredentials: true,
