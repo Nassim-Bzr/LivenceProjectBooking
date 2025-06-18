@@ -17,6 +17,10 @@ import { FirebaseProvider } from "./Context/FirebaseContext";
 import AddAppartement from "./Pages/Admin/AddAppartement";
 import AdminReservations from "./Pages/Admin/Reservations";
 import ClientProfile from "./Pages/Admin/ClientProfile";
+import AboutUs from "./Pages/AboutUs";
+import FAQ from "./Pages/FAQ";
+import CheckoutReservation from "./Pages/CheckoutReservation";
+import ReservationDetails from "./Pages/ReservationDetails";
 // NotFound page
 
 
@@ -33,16 +37,19 @@ function App() {
                   <Route path="/admin/reservations" element={<AdminReservations />} />
                   <Route path="/admin/client/:userId" element={<ClientProfile />} />
                   <Route path="/" element={<Home />} />
+                  <Route path="/about" element={<AboutUs />} />
+                  <Route path="/faq" element={<FAQ />} />
                   <Route path="/appartement/:slug" element={<AppartementDetails />} />
                   <Route path="/appartement/:slug/avis" element={<AppartementAvis />} />
+                  <Route path="/appartement/:slug/checkout" element={<CheckoutReservation />} />
+                  <Route path="/reservation/:id" element={<ReservationDetails />} />
                   <Route path="/proprietaires" element={<Proprietaires />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/messagerie" element={<Messagerie />} />
-                  <Route path="*" element={<NotFound />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
-
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
               <Footer />

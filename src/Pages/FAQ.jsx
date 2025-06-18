@@ -111,7 +111,7 @@ const FAQ = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+      <div className="bg-gradient-to-r from-slate-600 to-slate-800 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
@@ -137,7 +137,7 @@ const FAQ = () => {
                   placeholder="Rechercher dans les questions..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -151,7 +151,7 @@ const FAQ = () => {
                 onClick={() => setSelectedCategory(category.id)}
                 className={`flex items-center px-4 py-2 rounded-full font-medium transition-colors duration-200 ${
                   selectedCategory === category.id
-                    ? 'bg-blue-500 text-white'
+                    ? 'bg-slate-600 text-white'
                     : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                 }`}
               >
@@ -188,7 +188,7 @@ const FAQ = () => {
                     {item.question}
                   </h3>
                   {openItems.includes(index) ? (
-                    <FaChevronUp className="text-blue-500 flex-shrink-0" />
+                    <FaChevronUp className="text-slate-600 flex-shrink-0" />
                   ) : (
                     <FaChevronDown className="text-gray-400 flex-shrink-0" />
                   )}
@@ -209,7 +209,7 @@ const FAQ = () => {
         </div>
 
         {/* Contact Section */}
-        <div className="mt-16 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8 text-center">
+        <div className="mt-16 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl p-8 text-center border border-gray-200">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
             Vous ne trouvez pas votre réponse ?
           </h2>
@@ -219,14 +219,14 @@ const FAQ = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 
               to="/messagerie"
-              className="inline-flex items-center justify-center bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors duration-200"
+              className="inline-flex items-center justify-center bg-slate-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-700 transition-colors duration-200"
             >
               <FaQuestionCircle className="mr-2" />
               Contacter le support
             </Link>
             <Link 
               to="/about"
-              className="inline-flex items-center justify-center border border-blue-500 text-blue-500 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors duration-200"
+              className="inline-flex items-center justify-center border border-slate-600 text-slate-600 px-6 py-3 rounded-lg font-semibold hover:bg-slate-50 transition-colors duration-200"
             >
               En savoir plus sur Livence
             </Link>
@@ -236,7 +236,7 @@ const FAQ = () => {
         {/* Quick Links */}
         <div className="mt-12 grid md:grid-cols-3 gap-6">
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-center">
-            <FaHome className="mx-auto text-3xl text-blue-500 mb-4" />
+            <FaHome className="mx-auto text-3xl text-slate-600 mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Parcourir les appartements
             </h3>
@@ -245,14 +245,14 @@ const FAQ = () => {
             </p>
             <Link 
               to="/"
-              className="text-blue-500 hover:text-blue-600 font-medium"
+              className="text-slate-600 hover:text-slate-700 font-medium"
             >
               Voir les appartements →
             </Link>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-center">
-            <FaUsers className="mx-auto text-3xl text-purple-500 mb-4" />
+            <FaUsers className="mx-auto text-3xl text-blue-600 mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Créer un compte
             </h3>
@@ -261,14 +261,14 @@ const FAQ = () => {
             </p>
             <Link 
               to="/register"
-              className="text-purple-500 hover:text-purple-600 font-medium"
+              className="text-blue-600 hover:text-blue-700 font-medium"
             >
               S'inscrire →
             </Link>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-center">
-            <FaQuestionCircle className="mx-auto text-3xl text-green-500 mb-4" />
+            <FaQuestionCircle className="mx-auto text-3xl text-gray-600 mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               À propos de nous
             </h3>
@@ -277,7 +277,7 @@ const FAQ = () => {
             </p>
             <Link 
               to="/about"
-              className="text-green-500 hover:text-green-600 font-medium"
+              className="text-gray-600 hover:text-gray-700 font-medium"
             >
               En savoir plus →
             </Link>
