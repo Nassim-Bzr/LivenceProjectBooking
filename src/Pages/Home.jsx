@@ -332,34 +332,35 @@ export default function Home() {
             
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 bg-rose-500 text-white px-4 py-2 rounded-lg hover:bg-rose-600 transition-colors"
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-md transition-all duration-200 font-medium
+                ${showFilters
+                  ? "bg-blue-700 text-white border-2 border-blue-800"
+                  : "bg-blue-600 text-white hover:bg-blue-700 border border-transparent"
+                }`}
+              style={{
+                boxShadow: showFilters
+                  ? "0 4px 20px 0 rgba(30, 64, 175, 0.18)"
+                  : "0 2px 8px 0 rgba(30, 64, 175, 0.10)"
+              }}
             >
-              <FaFilter />
-              Filtres
+              <FaFilter className="text-white" />
+              <span className="font-semibold tracking-wide">Filtres</span>
             </button>
             
-            <button
-              onClick={handleRefresh}
-              className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-              disabled={loading}
-            >
-              <FaSync className={loading ? "animate-spin" : ""} />
-              {loading ? "Chargement..." : "Rafraîchir"}
-            </button>
+           
             
             {(searchTerm || selectedAmenities.length > 0 || selectedLocations.length > 0 || 
              guestCount > 1 || bedroomCount > 0 || bathroomCount > 0 || 
              priceRange[0] > minPrice || priceRange[1] < maxPrice) && (
               <button
                 onClick={resetFilters}
-                className="flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+                className="flex items-center gap-2 bg-rose-100 text-rose-700 px-4 py-2 rounded-lg hover:bg-rose-200 transition-colors font-medium"
               >
                 <FaTimes />
                 Réinitialiser
               </button>
             )}
           </div>
-          
           {/* Filtres avancés */}
           {showFilters && (
             <div className="bg-gray-50 p-4 rounded-lg mt-4">

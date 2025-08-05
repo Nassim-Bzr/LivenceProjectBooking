@@ -19,6 +19,7 @@ import AdminReservations from "./Pages/Admin/Reservations";
 import ClientProfile from "./Pages/Admin/ClientProfile";
 import AboutUs from "./Pages/AboutUs";
 import FAQ from "./Pages/FAQ";
+import Livence from "./Pages/Livence";
 import CheckoutReservation from "./Pages/CheckoutReservation";
 import ReservationDetails from "./Pages/ReservationDetails";
 // NotFound page
@@ -39,6 +40,7 @@ function App() {
                   <Route path="/" element={<Home />} />
                   <Route path="/about" element={<AboutUs />} />
                   <Route path="/faq" element={<FAQ />} />
+                  <Route path="/livence" element={<Livence />} />
                   <Route path="/appartement/:slug" element={<AppartementDetails />} />
                   <Route path="/appartement/:slug/avis" element={<AppartementAvis />} />
                   <Route path="/appartement/:slug/checkout" element={<CheckoutReservation />} />
@@ -60,4 +62,4 @@ function App() {
   );
 }
 
-export default App;
+export default App; 
