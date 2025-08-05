@@ -4,6 +4,7 @@ import { useAuth } from "../Context/AuthContext";
 import { useState, useEffect, useCallback } from "react";
 import { FaFilter, FaUser  , FaWifi, FaParking, FaSwimmingPool, FaBed, FaShower, FaEuroSign, FaMapMarkerAlt, FaSearch, FaTimes, FaSync } from "react-icons/fa";
 import { API_URL } from '../config/api';
+import { Helmet } from 'react-helmet';
 
 export default function Home() {
   const { user } = useAuth();
@@ -291,8 +292,19 @@ export default function Home() {
   }, [appartements, minPrice, maxPrice, priceRange]);
 
   return (
-    <div className="bg-gray-100 min-h-screen sm:px-6 lg:px-8">
-      {/* BANNIÈRE */}
+    <>
+      <Helmet>
+        <title>Livence - Location de logements meublés | Réservez votre séjour</title>
+        <meta name="description" content="Découvrez Livence, la plateforme de location de logements meublés. Trouvez votre hébergement idéal parmi notre sélection d'appartements et maisons. Réservation simple et sécurisée." />
+        <meta name="keywords" content="Livence, location meublée, hébergement, appartement, maison, réservation, séjour, logement temporaire" />
+        <link rel="canonical" href="https://livence.fr/" />
+        <meta property="og:title" content="Livence - Location de logements meublés" />
+        <meta property="og:description" content="Découvrez Livence, la plateforme de location de logements meublés. Trouvez votre hébergement idéal parmi notre sélection." />
+        <meta property="og:url" content="https://livence.fr/" />
+      </Helmet>
+      
+      <div className="bg-gray-100 min-h-screen sm:px-6 lg:px-8">
+        {/* BANNIÈRE */}
       <div className="h-[300px] sm:h-[400px] lg:h-[500px] relative -mx-6 lg:-mx-8">
         <img
           src="https://www.maisons-mca.com/wp-content/uploads/2024/01/les-bonnes-raisons-craquer-plan-maison-contemporaine-1.jpg"
@@ -343,7 +355,7 @@ export default function Home() {
                   : "0 2px 8px 0 rgba(30, 64, 175, 0.10)"
               }}
             >
-              <FaFilter className="text-white" />
+              <FaFilter className="text-white" />gt
               <span className="font-semibold tracking-wide">Filtres</span>
             </button>
             
@@ -648,5 +660,6 @@ export default function Home() {
         )}
       </div>
     </div>
+    </>
   );
 }

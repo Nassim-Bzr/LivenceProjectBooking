@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { FaStar, FaHome, FaShieldAlt, FaCog, FaExchangeAlt, FaHandHoldingUsd } from 'react-icons/fa';
+import { Helmet } from 'react-helmet';
 
 export default function Livence() {
   const [formData, setFormData] = useState({
@@ -113,8 +114,21 @@ export default function Livence() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-blue-50">
-      {/* Hero Section */}
+    <>
+      <Helmet>
+        <title>Livence - Votre partenaire gestion locative | Revenus garantis sans frais</title>
+        <meta name="description" content="Livence, votre locataire idéal ! Gestion complète de votre logement sans frais. +1300 propriétaires satisfaits. Revenus locatifs garantis, zéro gestion, flexibilité totale. Devenez rentier immobilier sereinement." />
+        <meta name="keywords" content="Livence, gestion locative, revenus garantis, propriétaire rentier, investissement immobilier, sous-location, gestion sans frais, locataire professionnel, immobilier locatif" />
+        <link rel="canonical" href="https://livence.fr/livence" />
+        <meta property="og:title" content="Livence - Votre partenaire gestion locative" />
+        <meta property="og:description" content="Livence, votre locataire idéal ! Gestion complète de votre logement sans frais. +1300 propriétaires satisfaits." />
+        <meta property="og:url" content="https://livence.fr/livence" />
+        <meta name="author" content="Livence" />
+        <meta name="robots" content="index, follow" />
+      </Helmet>
+      
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-blue-50">
+        {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-slate-900 via-blue-900 to-emerald-900 text-white py-32 px-4 overflow-hidden">
         {/* Animated background elements */}
         <div className="absolute inset-0">
@@ -828,6 +842,45 @@ export default function Livence() {
           </div>
         </div>
       </section>
-    </div>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div>
+              <h3 className="text-2xl font-bold mb-4">Livence</h3>
+              <p className="text-gray-300">
+                Gestion complète de votre logement sans frais.
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="text-lg font-semibold mb-4">NOS COORDONNÉES</h4>
+              <p className="text-gray-300 mb-2">contact@livence.fr</p>
+              <p className="text-gray-300">+33 6 52 90 38 03</p>
+            </div>
+            
+            <div>
+              <h4 className="text-lg font-semibold mb-4">CONTACTEZ-NOUS</h4>
+              <div className="flex">
+                <input
+                  type="email"
+                  placeholder="Entrez votre adresse email"
+                  className="flex-1 px-4 py-2 rounded-l-lg text-gray-900"
+                />
+                <button className="bg-blue-600 px-6 py-2 rounded-r-lg hover:bg-blue-700 transition-colors">
+                  →
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div className="text-center pt-8 border-t border-gray-700">
+            <p className="text-gray-400">© 2024 Livence. Tous droits réservés.</p>
+          </div>
+        </div>
+      </footer>
+      </div>
+    </>
   );
 } 
