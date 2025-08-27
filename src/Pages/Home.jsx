@@ -297,10 +297,10 @@ export default function Home() {
         <title>Livence - Location de logements meublés | Réservez votre séjour</title>
         <meta name="description" content="Découvrez Livence, la plateforme de location de logements meublés. Trouvez votre hébergement idéal parmi notre sélection d'appartements et maisons. Réservation simple et sécurisée." />
         <meta name="keywords" content="Livence, location meublée, hébergement, appartement, maison, réservation, séjour, logement temporaire" />
-        <link rel="canonical" href="https://livence.fr/" />
+        <link rel="canonical" href="https://www.livence.fr/" />
         <meta property="og:title" content="Livence - Location de logements meublés" />
         <meta property="og:description" content="Découvrez Livence, la plateforme de location de logements meublés. Trouvez votre hébergement idéal parmi notre sélection." />
-        <meta property="og:url" content="https://livence.fr/" />
+        <meta property="og:url" content="https://www.livence.fr/" />
       </Helmet>
       
       <div className="bg-gray-100 min-h-screen sm:px-6 lg:px-8">

@@ -119,10 +119,10 @@ export default function Livence() {
         <title>Livence - Votre partenaire gestion locative | Revenus garantis sans frais</title>
         <meta name="description" content="Livence, votre locataire idéal ! Gestion complète de votre logement sans frais. +1300 propriétaires satisfaits. Revenus locatifs garantis, zéro gestion, flexibilité totale. Devenez rentier immobilier sereinement." />
         <meta name="keywords" content="Livence, gestion locative, revenus garantis, propriétaire rentier, investissement immobilier, sous-location, gestion sans frais, locataire professionnel, immobilier locatif" />
-        <link rel="canonical" href="https://livence.fr/livence" />
+        <link rel="canonical" href="https://www.livence.fr/livence" />
         <meta property="og:title" content="Livence - Votre partenaire gestion locative" />
         <meta property="og:description" content="Livence, votre locataire idéal ! Gestion complète de votre logement sans frais. +1300 propriétaires satisfaits." />
-        <meta property="og:url" content="https://livence.fr/livence" />
+        <meta property="og:url" content="https://www.livence.fr/livence" />
         <meta name="author" content="Livence" />
         <meta name="robots" content="index, follow" />
       </Helmet>
