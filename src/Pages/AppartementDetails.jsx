@@ -22,7 +22,7 @@ const AppartementDetails = () => {
   const [showSmoobuBooking, setShowSmoobuBooking] = useState(false);
   const [showDirectBooking, setShowDirectBooking] = useState(false);
   const [guestsCount, setGuestsCount] = useState(1);
-  
+
   // État pour l'édition d'appartement
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -46,7 +46,7 @@ const AppartementDetails = () => {
         console.log("Données reçues de l'API:", resAppart.data);
         setAppartement(resAppart.data);
         setImageError(false);
-    
+
         // Initialiser le formulaire d'édition avec les données actuelles
         setEditForm({
           titre: resAppart.data.titre,
@@ -88,7 +88,7 @@ const AppartementDetails = () => {
 
   const getImages = (imagesStr) => {
     if (!imagesStr) return [];
-    
+
     // Cas particulier pour les images
     if (typeof imagesStr === 'string') {
       // Approche directe pour extraire l'URL de l'image
@@ -98,7 +98,7 @@ const AppartementDetails = () => {
         console.log("URLs extraites:", matches);
         return matches;
       }
-      
+
       // Si l'extraction d'URL a échoué, essayons de nettoyer et parser
       try {
         // Enlever tous les backslashes
@@ -115,13 +115,13 @@ const AppartementDetails = () => {
         console.log("Échec du nettoyage et parsing:", e);
       }
     }
-    
+
     // En cas d'échec, on essaie simplement de parser
     const parsed = parseJSON(imagesStr);
     if (Array.isArray(parsed)) {
       return parsed;
     }
-    
+
     return [];
   };
 
@@ -137,8 +137,8 @@ const AppartementDetails = () => {
   const getCapaciteValue = (key, defaultValue = 0) => {
     if (!appartement?.capacite) return defaultValue;
     const capacite = parseJSON(appartement.capacite);
-    return (capacite && typeof capacite === 'object' && capacite[key] !== undefined) 
-      ? capacite[key] 
+    return (capacite && typeof capacite === 'object' && capacite[key] !== undefined)
+      ? capacite[key]
       : defaultValue;
   };
 
@@ -162,15 +162,15 @@ const AppartementDetails = () => {
   // Fonction pour réserver directement sur notre plateforme
   const handleDirectReservation = async () => {
     if (!user) {
-      navigate("/login", { 
-        state: { 
+      navigate("/login", {
+        state: {
           redirectUrl: `/appartement/${slug}`,
-          message: "Connectez-vous pour effectuer votre réservation" 
-        } 
+          message: "Connectez-vous pour effectuer votre réservation"
+        }
       });
       return;
     }
-  
+
     if (!selectedDates || !selectedDates[0] || !selectedDates[1]) {
       setError("Veuillez sélectionner des dates pour votre séjour");
       return;
@@ -178,7 +178,7 @@ const AppartementDetails = () => {
 
     setLoading(true);
     setError(null);
-    
+
     try {
       // Créer l'objet réservation
       const reservationData = {
@@ -188,39 +188,39 @@ const AppartementDetails = () => {
         totalPrice: totalPrice,
         guestsCount: guestsCount
       };
-      
+
       console.log("Données de réservation:", reservationData);
-      
+
       // Envoyer la demande de réservation
       const response = await axios.post(
         `${API_URL}/reservations`,
         reservationData,
-        { 
+        {
           withCredentials: true,
           headers: {
             'Content-Type': 'application/json'
           }
         }
       );
-      
+
       console.log("Réponse de réservation:", response.data);
-      
+
       // Afficher un message de succès
       setSuccessMessage("Votre réservation a été effectuée avec succès !");
-      
+
       // Réinitialiser le formulaire
       setSelectedDates(null);
-      
+
       // Rediriger vers la page de confirmation
       setTimeout(() => {
-        navigate("/profile", { 
-          state: { 
+        navigate("/profile", {
+          state: {
             message: "Votre réservation a été enregistrée avec succès",
             reservationId: response.data.reservation.id
-          } 
+          }
         });
       }, 2000);
-      
+
     } catch (err) {
       console.error("Erreur lors de la réservation:", err);
       if (err.response && err.response.data) {
@@ -236,9 +236,9 @@ const AppartementDetails = () => {
   // Fonction pour afficher les étoiles
   const renderStars = (rating) => {
     return [...Array(5)].map((_, i) => (
-      <FaStar 
-        key={i} 
-        className={i < rating ? "text-yellow-400" : "text-gray-300"} 
+      <FaStar
+        key={i}
+        className={i < rating ? "text-yellow-400" : "text-gray-300"}
       />
     ));
   };
@@ -247,11 +247,17 @@ const AppartementDetails = () => {
   const getSmoobuWidget = () => {
     // Vérifier si l'appartement a un ID Smoobu
     if (!appartement || !appartement.smoobuId) return null;
-    
+
     const divId = `apartmentIframe${appartement.smoobuId}`;
     // Utiliser l'ID d'hôte stocké dans l'appartement ou l'ID par défaut
-    const hosteId = appartement.smoobuHosteId || '1134658';
-    
+    // ... existing code ...
+    console.log('smoobuId:', appartement.smoobuId, 'type:', typeof appartement.smoobuId);
+    const hosteId = (parseInt(appartement.smoobuId) === 2909676 || parseInt(appartement.smoobuId) === 2918431) ? '1403566' : '1134658';
+    console.log('hosteId:', hosteId);
+    // ... existing code ...
+
+
+    console.log(appartement.smoobuId)
     // Retourner le widget sous forme de JSX
     return (
       <div id={divId}>
@@ -280,31 +286,33 @@ const AppartementDetails = () => {
         slug: appartement.slug,
         titre: appartement.titre
       });
-      
+
       const script = document.createElement('script');
       script.src = 'https://login.smoobu.com/js/Settings/BookingToolIframe.js';
       script.async = true;
       document.body.appendChild(script);
-      
+
       script.onload = () => {
         // Une fois le script chargé, initialiser le widget
         const divId = `apartmentIframe${appartement.smoobuId}`;
         // Utiliser l'ID d'hôte stocké dans l'appartement ou l'ID par défaut
-        const hosteId = appartement.smoobuHosteId || '1134658';
+        const hosteId = [2909676, 2918431].includes(Number(appartement.smoobuId)) ? '1403566' : '1134658';
+
         
+
         console.log(`Initialisation avec hosteId: ${hosteId} et appartementId: ${appartement.smoobuId}`);
-        
+
         if (window.BookingToolIframe && document.getElementById(divId)) {
           window.BookingToolIframe.initialize({
-            "url": `https://login.smoobu.com/fr/booking-tool/iframe/${hosteId}/${appartement.smoobuId}`, 
-            "baseUrl": "https://login.smoobu.com", 
+            "url": `https://login.smoobu.com/fr/booking-tool/iframe/${hosteId}/${appartement.smoobuId}`,
+            "baseUrl": "https://login.smoobu.com",
             "target": `#${divId}`
           });
         } else {
           console.error("Échec d'initialisation - BookingToolIframe ou divId non trouvé");
         }
       };
-      
+
       return () => {
         document.body.removeChild(script);
       };
@@ -389,7 +397,7 @@ const AppartementDetails = () => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
-    
+
     try {
       // Préparer les données au format attendu par l'API
       const updateData = {
@@ -404,33 +412,33 @@ const AppartementDetails = () => {
         smoobuId: editForm.smoobuId ? parseInt(editForm.smoobuId, 10) : null,
         images: JSON.stringify(editForm.images)
       };
-      
+
       console.log("Données de mise à jour:", updateData);
-      
+
       // Envoyer la demande de mise à jour
       const response = await axios.put(
         `${API_URL}/appartements/${appartement.id}`,
         updateData,
-        { 
+        {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token') || sessionStorage.getItem('token')}`
           }
         }
       );
-      
+
       console.log("Réponse de mise à jour:", response.data);
-      
+
       // Afficher un message de succès
       setSuccessMessage("L'appartement a été mis à jour avec succès !");
-      
+
       // Recharger les données de l'appartement
       const resAppart = await axios.get(`${API_URL}/appartements/slug/${slug}`);
       setAppartement(resAppart.data);
-      
+
       // Sortir du mode édition
       setIsEditing(false);
-      
+
     } catch (err) {
       console.error("Erreur lors de la mise à jour de l'appartement:", err);
       if (err.response && err.response.data) {
@@ -453,7 +461,7 @@ const AppartementDetails = () => {
         <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
           <FaEdit className="mr-2" /> Modifier l'appartement
         </h2>
-        
+
         <div className="mb-4">
           <label htmlFor="titre" className="block text-sm font-medium text-gray-700 mb-1">Titre</label>
           <input
@@ -466,7 +474,7 @@ const AppartementDetails = () => {
             required
           />
         </div>
-        
+
         <div className="mb-4">
           <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <textarea
@@ -479,7 +487,7 @@ const AppartementDetails = () => {
             required
           />
         </div>
-        
+
         <div className="mb-4">
           <label htmlFor="localisation" className="block text-sm font-medium text-gray-700 mb-1">Localisation</label>
           <input
@@ -492,7 +500,7 @@ const AppartementDetails = () => {
             required
           />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
             <label htmlFor="prixParNuit" className="block text-sm font-medium text-gray-700 mb-1">Prix par nuit (€)</label>
@@ -521,7 +529,7 @@ const AppartementDetails = () => {
             />
           </div>
         </div>
-        
+
         <h3 className="text-lg font-semibold mt-6 mb-3 text-gray-800">Capacité</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
@@ -698,12 +706,12 @@ const AppartementDetails = () => {
               </button>
             </div>
           )}
-          
+
           {/* Formulaire d'édition */}
           {isAdmin && isEditing && renderEditForm()}
-          
+
           <h1 className="text-3xl font-bold mb-4">{appartement.titre}</h1>
-          
+
           {/* Afficher les messages de succès/erreur */}
           {successMessage && (
             <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded flex items-center">
@@ -711,14 +719,14 @@ const AppartementDetails = () => {
               {successMessage}
             </div>
           )}
-          
+
           {error && (
             <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded flex items-center">
               <FaTimesCircle className="mr-2" />
               {typeof error === 'object' && error.message ? error.message : error}
             </div>
           )}
-          
+
           <div className="flex items-center gap-4 mb-6">
             <Link to={`/appartement/${slug}/avis`} className="flex items-center hover:text-blue-600 transition-colors">
               <div className="flex items-center">
@@ -737,7 +745,7 @@ const AppartementDetails = () => {
             <div>
               {/* Image principale */}
               <div className="relative bg-gray-100 rounded-xl overflow-hidden">
-                <img 
+                <img
                   src={getImages(appartement.images)[0] || 'https://via.placeholder.com/300x200?text=Image+non+disponible'}
                   alt={appartement.titre}
                   className="w-full h-96 object-cover"
@@ -795,23 +803,23 @@ const AppartementDetails = () => {
               <div className="mt-8">
                 <h3 className="text-xl font-semibold mb-4">Ce que propose ce logement</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  {Array.isArray(parseJSON(appartement.inclus)) 
+                  {Array.isArray(parseJSON(appartement.inclus))
                     ? parseJSON(appartement.inclus).map((item, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          {item === "Wifi" && <FaWifi />}
-                          {item === "Parking gratuit" && <FaParking />}
-                          <span>{item}</span>
-                        </div>
-                      ))
+                      <div key={index} className="flex items-center gap-2">
+                        {item === "Wifi" && <FaWifi />}
+                        {item === "Parking gratuit" && <FaParking />}
+                        <span>{item}</span>
+                      </div>
+                    ))
                     : <div>Aucun équipement spécifié</div>
                   }
                 </div>
               </div>
-              
+
               <div className="mt-8 mb-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xl font-semibold">Avis</h3>
-                  <Link 
+                  <Link
                     to={`/appartement/${slug}/avis`}
                     className="text-blue-600 hover:text-blue-800 flex items-center"
                   >
@@ -819,7 +827,7 @@ const AppartementDetails = () => {
                     <FaChevronRight className="ml-1" />
                   </Link>
                 </div>
-                
+
                 <div className="flex items-center mt-2 mb-4">
                   <div className="flex mr-2">
                     {renderStars(appartement.note)}
@@ -828,8 +836,8 @@ const AppartementDetails = () => {
                   <span className="mx-2">•</span>
                   <span>{appartement.nombreAvis} avis</span>
                 </div>
-                
-                <Link 
+
+                <Link
                   to={`/appartement/${slug}/avis`}
                   className="block w-full mt-4 px-4 py-2 bg-white border border-gray-300 rounded-lg text-center hover:bg-gray-50"
                 >
@@ -859,12 +867,12 @@ const AppartementDetails = () => {
                   {showSmoobuBooking ? "Masquer" : "Réserver"}
                 </button>
               </div>
-              
+
               {/* Interface de réservation directe */}
               {showDirectBooking && (
                 <div className="mt-4 p-4 border rounded-lg">
                   <h3 className="text-lg font-semibold mb-4">Réserver directement</h3>
-                  
+
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Dates de séjour
@@ -878,7 +886,7 @@ const AppartementDetails = () => {
                       className="w-full rounded border"
                     />
                   </div>
-                  
+
                   {selectedDates && selectedDates[0] && selectedDates[1] && (
                     <div className="my-4 p-3 bg-gray-50 rounded-lg">
                       <p className="font-medium">Séjour {formatDateRange(selectedDates)}</p>
@@ -887,7 +895,7 @@ const AppartementDetails = () => {
                       </p>
                     </div>
                   )}
-                  
+
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Nombre de voyageurs
@@ -904,7 +912,7 @@ const AppartementDetails = () => {
                       ))}
                     </select>
                   </div>
-                  
+
                   {selectedDates && selectedDates[0] && selectedDates[1] && (
                     <div className="border-t pt-4 mt-4">
                       <div className="flex justify-between mb-2">
@@ -913,7 +921,7 @@ const AppartementDetails = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   <button
                     onClick={handleDirectReservation}
                     disabled={loading || !selectedDates || !selectedDates[0] || !selectedDates[1]}
@@ -926,7 +934,7 @@ const AppartementDetails = () => {
                   </button>
                 </div>
               )}
-              
+
               {/* Interface de réservation Smoobu */}
               {showSmoobuBooking && (
                 <div className="mt-4 bg-white p-4 rounded-lg shadow-md">
@@ -940,7 +948,7 @@ const AppartementDetails = () => {
               )}
             </div>
           </div>
-          
+
         </>
       ) : (
         <div className="flex justify-center">

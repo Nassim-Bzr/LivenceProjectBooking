@@ -60,7 +60,8 @@ export default function Home() {
           titre: data[0].titre,
           localisation: data[0].localisation,
           prix: data[0].prixParNuit,
-          capacite: data[0].capacite
+          capacite: data[0].capacite,
+          smoobuId: data[0].smoobuId,
         });
       }
       
@@ -159,6 +160,7 @@ export default function Home() {
       
       // Filtre par recherche textuelle (titre ou emplacement)
       if (searchTerm.trim() !== "") {
+
         result = result.filter(apt => 
           apt.titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
           apt.localisation.toLowerCase().includes(searchTerm.toLowerCase())
@@ -355,7 +357,7 @@ export default function Home() {
                   : "0 2px 8px 0 rgba(30, 64, 175, 0.10)"
               }}
             >
-              <FaFilter className="text-white" />gt
+              <FaFilter className="text-white" />
               <span className="font-semibold tracking-wide">Filtres</span>
             </button>
             
