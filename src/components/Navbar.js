@@ -139,10 +139,13 @@ export default function Navbar() {
               <Link to="/livence"
                 className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px]'>Livence</Link>
             </li>
+            <li className='max-lg:border-b max-lg:py-3 px-3'>
+              <Link to="/calendar"
+                className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px]'>Calendrier</Link>
+            </li>
         
             {user ? (
               <>
-            
                 <li className='max-lg:border-b max-lg:py-3 px-3'>
                   <Link to="/messagerie"
                     className='font-medium lg:hover:text-blue-700 text-slate-900 block text-[15px] flex items-center relative'>

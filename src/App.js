@@ -22,6 +22,7 @@ import FAQ from "./Pages/FAQ";
 import Livence from "./Pages/Livence";
 import CheckoutReservation from "./Pages/CheckoutReservation";
 import ReservationDetails from "./Pages/ReservationDetails";
+import Calendar from "./Pages/Calendar.tsx";
 // NotFound page
 
 
@@ -41,6 +42,7 @@ function App() {
                   <Route path="/about" element={<AboutUs />} />
                   <Route path="/faq" element={<FAQ />} />
                   <Route path="/livence" element={<Livence />} />
+                  <Route path="/calendar" element={<Calendar />} />
                   <Route path="/appartement/:slug" element={<AppartementDetails />} />
                   <Route path="/appartement/:slug/avis" element={<AppartementAvis />} />
                   <Route path="/appartement/:slug/checkout" element={<CheckoutReservation />} />
