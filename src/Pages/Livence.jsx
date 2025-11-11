@@ -117,11 +117,11 @@ export default function Livence() {
     <>
       <Helmet>
         <title>Livence - Votre partenaire gestion locative | Revenus garantis sans frais</title>
-        <meta name="description" content="Livence, votre locataire idéal ! Gestion complète de votre logement sans frais. +1300 propriétaires satisfaits. Revenus locatifs garantis, zéro gestion, flexibilité totale. Devenez rentier immobilier sereinement." />
+        <meta name="description" content="Livence, votre locataire idéal ! Gestion complète de votre logement sans frais. +30 propriétaires satisfaits. Revenus locatifs garantis, zéro gestion, flexibilité totale. Devenez rentier immobilier sereinement." />
         <meta name="keywords" content="Livence, gestion locative, revenus garantis, propriétaire rentier, investissement immobilier, sous-location, gestion sans frais, locataire professionnel, immobilier locatif" />
         <link rel="canonical" href="https://www.livence.fr/livence" />
         <meta property="og:title" content="Livence - Votre partenaire gestion locative" />
-        <meta property="og:description" content="Livence, votre locataire idéal ! Gestion complète de votre logement sans frais. +1300 propriétaires satisfaits." />
+        <meta property="og:description" content="Livence, votre locataire idéal ! Gestion complète de votre logement sans frais. +30 propriétaires satisfaits." />
         <meta property="og:url" content="https://www.livence.fr/livence" />
         <meta name="author" content="Livence" />
         <meta name="robots" content="index, follow" />
@@ -424,7 +424,7 @@ export default function Livence() {
               Nos <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">avantages</span> exclusifs
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Découvrez pourquoi plus de 1300 propriétaires nous font confiance pour gérer leurs biens
+              Découvrez pourquoi plus de 30 propriétaires nous font confiance pour gérer leurs biens
             </p>
           </motion.div>
           
@@ -609,7 +609,7 @@ export default function Livence() {
               <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent"> investissement </span>?
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-              Rejoignez plus de 1300 propriétaires qui ont déjà fait confiance à Livence. 
+              Rejoignez plus de 30 propriétaires qui ont déjà fait confiance à Livence. 
               Obtenez une estimation personnalisée en moins de 24h !
             </p>
             
